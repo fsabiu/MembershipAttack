@@ -96,6 +96,21 @@ def get_numeric_columns(df):
     numeric_columns = list(df._get_numeric_data().columns)
     return numeric_columns
 
+def get_unique_df_values(dataset, dtypes):
+    data = pd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv', dtype = dtypes)
+
+    unique_values = {}
+
+    for i, col in enumerate(data.columns): # Not numeric column
+
+        if (dtypes[col] == 'object'): # If categorical column
+
+            print("Saving values for column " + col + " - (" + str(i+1) + "/" + str(len(data.columns)) + ")")
+            # Unique values
+            unique_values[col] = data[col].compute().unique()
+    
+    return unique_values
+
 def get_real_feature_names(rdf, numeric_columns, class_name):
     if isinstance(class_name, list):
         real_feature_names = [c for c in rdf.columns if c in numeric_columns and c not in class_name]
@@ -104,6 +119,10 @@ def get_real_feature_names(rdf, numeric_columns, class_name):
         real_feature_names = [c for c in rdf.columns if c in numeric_columns and c != class_name]
         real_feature_names += [c for c in rdf.columns if c not in numeric_columns and c != class_name]
     return real_feature_names
+
+def load_obj(file_path):
+    with open(path + '/' + file_path + '.pkl', 'rb') as f:
+        return pickle.load(f)
 
 def make_report(model, params, evaluation):
 
@@ -376,6 +395,6 @@ def save_obj(obj, file_path):
     with open(path + '/' + file_path + '.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
-def load_obj(file_path):
-    with open(path + '/' + file_path + '.pkl', 'rb') as f:
-        return pickle.load(f)
+def splitDataset(dataset): # to do
+    data = pd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv', dtype = dtypes)
+    return None
