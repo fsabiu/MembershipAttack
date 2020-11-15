@@ -33,6 +33,48 @@ def encode_dataset(df, class_name):
 
     return df, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map
 
+def encode_Dask_dataset(data, class_name, dtypes, excluded_cols):
+    
+    cols_map = {}
+    unique_values = {}
+    categoric_colnames = []
+
+    encoded_data = pd.DataFrame()
+
+    for i, col in enumerate(data.columns): # Not numeric column
+
+        if (dtypes[col] == 'object' and col not in excluded_cols): # If categorical column
+
+            print("Binarizing column " + col + " - (" + str(i+1) + "/" + str(len(data.columns)) + ")")
+            # Unique values
+            unique_values[col] = data[col].compute().unique()
+            columns = {}
+
+            # Creating columns
+            for value in unique_values[col]:
+                columns[col + '-' + str(value)] = []
+                categoric_colnames.append(col + '-' + str(value))
+
+            cols_map[col] = columns
+
+            for value in data[col].compute():
+                for possible_value in unique_values[col]:
+                    if (value == possible_value):
+                        cols_map[col][col + '-' + str(possible_value)].append(1)
+                    else:
+                        cols_map[col][col + '-' + str(possible_value)].append(0)
+        
+        else: # If numeric column
+            encoded_data[col] = data[col]
+
+    for i, col in enumerate(cols_map.keys()): # original column
+        print("Appending columns generated from " + col + " - (" + str(i+1) + "/" + len(cols_map.keys()) + ")")
+        for new_col in cols_map[col].keys():
+            print(new_col + "...")
+            encoded_data[new_col] = cols_map[col][new_col]
+
+    return encoded_data.compute()
+
 def get_features_map(feature_names, real_feature_names):
     features_map = defaultdict(dict)
     i = 0
@@ -68,10 +110,11 @@ def make_report(model, params, evaluation):
     params_dict = {}
     params_dict['model'] = model
     
+    """
     # Adding model parameters
     for param in params.keys():
         hp.HParam(param) = params_dict[param]
-
+    """
     # Metrics
     METRIC_ACCURACY = 'accuracy'
     METRIC_PRECISION = 'precision'

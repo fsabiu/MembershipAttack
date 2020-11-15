@@ -1,20 +1,29 @@
+import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import sklearn
 from sklearn.model_selection import train_test_split
 import sys
-from util import encode_dataset, path, prepare_dataset, split
+from util import encode_dataset, encode_Dask_dataset, load_obj, path, prepare_dataset, split
 
 sys.path.insert(0, path)
 
 def preprocess(dataset, explainer):
 
     # Dataset preparation
-    data, class_name = prepare_dataset(dataset, explainer)
+    #data, class_name = prepare_dataset(dataset, explainer)
+    class_name = 'PRINC_SURG_PROC_CODE'
     print("Preparation completed")
+    
+    encoded_data = None
 
-    # Encoding
-    #encoded_data, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map = encode_dataset(data, class_name)
+    if (dataset == 'texas'):
+        dtypes = load_obj('data/texas' + '/dtypes')
+        data = dd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv', dtype = dtypes) # Dask
+        encoded_data = encode_Dask_dataset(data, class_name, dtypes, excluded_cols = 'PRINC_SURG_PROC_CODE')
+    else:
+        # Encoding
+        encoded_data, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map = encode_dataset(data, class_name)
 
     # Splitting both datasets
     bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)
