@@ -79,10 +79,9 @@ def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_co
     rows = 0
     chunk_size = 200000
     
-
     for index, data in enumerate(pd.read_csv('data/' + dataset + '/' + dataset +'.csv', dtype = dtypes, chunksize=chunk_size),start=1):
         rows += chunk_size
-        print("Chunk " + str(i) + ": " + str(rows) + " rows")
+        print("Chunk " + str(index) + ": " + str(rows) + " rows")
 
         categoric_colnames = []
         cols_map = {}
@@ -109,14 +108,15 @@ def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_co
                 encoded_data[col] = data[col]
 
         for i, col in enumerate(cols_map.keys()): # original column
-            print("Appending columns generated from " + col + " - (" + str(i+1) + "/" + len(cols_map.keys()) + ")")
+            print("Appending columns generated from " + col + " - (" + str(i+1) + "/" + str(len(cols_map.keys())) + ")")
             for new_col in cols_map[col].keys():
                 print(new_col + "...")
                 encoded_data[new_col] = cols_map[col][new_col]
 
         # Writing datasets
-        data.to_csv('data/' + dataset + '/splitted/' + dataset + str(i) + '.csv')
-        encoded_data.to_csv('data/' + dataset + '/encoded/' + dataset + str(i) + '.csv')
+        print("Writing data...")
+        data.to_csv('data/' + dataset + '/splitted/' + dataset + str(index) + '.csv')
+        encoded_data.to_csv('data/' + dataset + '/encoded/' + dataset + str(index) + '.csv')
     
     return True
 
