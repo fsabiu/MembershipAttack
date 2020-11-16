@@ -4,39 +4,44 @@ import pandas as pd
 import sklearn
 from sklearn.model_selection import train_test_split
 import sys
-from util import encode_dataset, encode_Dask_dataset, getUniqueDfValues, load_obj, path, prepare_dataset, save_obj, split, splitDataset
+from util import encode_dataset, encode_Dask_dataset, encode_split_dataset, get_unique_df_values, load_obj, path, prepare_dataset, save_obj, split, splitDataset
 
 sys.path.insert(0, path)
 
 def preprocess(dataset, explainer):
 
     # Dataset preparation
-    #data, class_name = prepare_dataset(dataset, explainer)
-    class_name = 'PRINC_SURG_PROC_CODE'
+    data =  class_name = None 
+    
     print("Preparation completed")
     
     encoded_data = None
 
     if (dataset == 'texas'): #
+        class_name = 'PRINC_SURG_PROC_CODE'
         dtypes = load_obj('data/' + dataset + '/dtypes')
-        unique_values = getUniqueDfValues(dataset, dtypes)
+        #unique_values = get_unique_df_values(dataset, dtypes)
+        #save_obj(unique_values, 'data/' + dataset + '/unique_values')
 
-        save_obj(unique_values, 'data/' + dataset + '/unique_values')
         unique_values = load_obj('data/' + dataset + '/dtypes')
-        print("Unique values saved")
         
-        splitDataset(dataset)
-        
+        encode_split_dataset(dataset, class_name, dtypes, unique_values, class_name)
 
-        encoded_data = dd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv', dtype = dtypes) # Dask
+        print("Splitted and encoded")
+        
+        return True
+        """
+        encoded_data = dd.read_csv(data/' + dataset + '/' + dataset +'.csv', dtype = dtypes) # Dask
         encoded_data = encode_Dask_dataset(encoded_data, class_name, dtypes, excluded_cols = 'PRINC_SURG_PROC_CODE')
         encoded_data.to_csv('data/' + dataset + '/texas_encoded.csv', index=False)
+        """
     else:
+        data, class_name = prepare_dataset(dataset, explainer)
         # Encoding
         encoded_data, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map = encode_dataset(data, class_name)
 
     # Splitting both datasets
-    #bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)
+    bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)
     bb_train_e, bb_val_e, sh_train_e, sh_val_e, r2E_e, test_e = split(encoded_data, class_name)
 
     # Writing datasets
