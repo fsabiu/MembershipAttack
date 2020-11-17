@@ -10,9 +10,10 @@ from sklearn.model_selection import train_test_split
 import tensorboard
 from tensorboard.plugins.hparams import api as hp
 import tensorflow as tf
+from tensorflow.keras.layers import Dense
 
-path = '/home/fsabiu/Code2'
-#path = 'D:/Drive/Thesis/Code2'
+#path = '/mnt/dati/fsabiu/Code2'
+path = 'D:/Drive/Thesis/Code2'
 sys.path.insert(0, path)
 
 def encode_dataset(df, class_name):
@@ -106,7 +107,7 @@ def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_co
                             cols_map[col][col + '-' + str(possible_value)].append(0)
             else: # if numeric column
                 encoded_data[col] = data[col]
-
+        
         for i, col in enumerate(cols_map.keys()): # original column
             print("Appending columns generated from " + col + " - (" + str(i+1) + "/" + str(len(cols_map.keys())) + ")")
             for new_col in cols_map[col].keys():
@@ -117,7 +118,7 @@ def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_co
         print("Writing data...")
         data.to_csv('data/' + dataset + '/splitted/' + dataset + str(index) + '.csv')
         encoded_data.to_csv('data/' + dataset + '/encoded/' + dataset + str(index) + '.csv')
-    
+        
     return True
 
 def get_features_map(feature_names, real_feature_names):
@@ -169,7 +170,7 @@ def load_obj(file_path):
     with open(path + '/' + file_path + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def make_report(model, params, evaluation):
+def make_report(model, params, evaluation, logdir):
 
     params_dict = {}
     params_dict['model'] = model
@@ -196,26 +197,6 @@ def make_report(model, params, evaluation):
 
     return
 
-def model_evaluation(modelType, model, X_test, y_test):
-
-    y_pred = None
-
-    if (modelType == 'NN'):
-        y_pred = model.predict_classes(X_test)
-
-    if (modelType == 'RF'):
-        y_pred = model.predict(X_test)
-
-    evaluation['accuracy'] = accuracy_score(y_true, y_pred)
-    evaluation['accuracy_raw'] = accuracy_score(y_true, y_pred, normalize=False)
-    evaluation['confusion_matrix'] = confusion_matrix(y_true, y_pred) # .ravel() to get tn, fp, fn, tp 
-    evaluation['precision'] = average_precision_score(y_true, y_scores)(y_true, y_pred)
-    evaluation['recall'] = recall_score(y_true, y_scores)(y_true, y_pred) 
-    evaluation['report'] = classification_report(y_test, y_pred)
-
-    print(evaluation['report'])
-    return evaluation
-
 def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, size=None):
     model = tf.keras.models.Sequential()
     if size is not None:
@@ -232,6 +213,27 @@ def model_creation(hidden_layers, hidden_units, act_function, learning_rate, opt
     )
 
     return model
+
+def model_evaluation(modelType, model, X_test, y_test):
+
+    y_pred = None
+
+    if (modelType == 'NN'):
+        y_pred = model.predict_classes(X_test)
+
+    if (modelType == 'RF'):
+        y_pred = model.predict(X_test)
+
+    evaluation = {}
+    evaluation['accuracy'] = accuracy_score(y_test, y_pred)
+    evaluation['accuracy_raw'] = accuracy_score(y_test, y_pred, normalize=False)
+    evaluation['confusion_matrix'] = confusion_matrix(y_test, y_pred) # .ravel() to get tn, fp, fn, tp 
+    evaluation['precision'] = average_precision_score(y_test, y_pred)
+    evaluation['recall'] = recall_score(y_test, y_pred) 
+    evaluation['report'] = classification_report(y_test, y_pred)
+
+    print(evaluation['report'])
+    return evaluation
 
 def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size, epochs, logdir):
     if pool_size != 1:

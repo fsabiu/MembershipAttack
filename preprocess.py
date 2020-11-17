@@ -23,10 +23,11 @@ def preprocess(dataset, explainer):
         #unique_values = get_unique_df_values(dataset, dtypes)
         #save_obj(unique_values, 'data/' + dataset + '/unique_values')
 
-        unique_values = load_obj('data/' + dataset + '/dtypes')
+        unique_values = load_obj('data/' + dataset + '/unique_values')
         
         encode_split_dataset(dataset, class_name, dtypes, unique_values, class_name)
 
+        split
         print("Splitted and encoded")
         
         return True
@@ -48,7 +49,7 @@ def preprocess(dataset, explainer):
     if(len(bb_train) + len(bb_val) + len(sh_train) + len(sh_val) + len(r2E) + len(test) == len(data)
     and len(bb_train_e) + len(bb_val_e) + len(sh_train_e) + len(sh_val_e) + len(r2E_e) + len(test_e) == len(encoded_data)):
         print('Dataset: ' + dataset)
-        #bb_train.to_csv('data/' + dataset + '/baseline_split/bb_train.csv', index=False)
+        bb_train.to_csv('data/' + dataset + '/baseline_split/bb_train.csv', index=False)
         bb_train_e.to_csv('data/' + dataset + '/baseline_split/bb_train_e.csv', index=False)
         print("bb_train saved")
         bb_val.to_csv('data/' + dataset + '/baseline_split/bb_val.csv', index=False)
