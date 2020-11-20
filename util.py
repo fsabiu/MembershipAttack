@@ -216,17 +216,16 @@ def model_evaluation(modelType, model, X_test, y_test):
         y_pred = model.predict(X_test)
 
     metrics['accuracy'] = accuracy_score(y_test, y_pred)
-    #metrics['accuracy_raw'] = accuracy_score(y_test, y_pred, normalize=False)
-    #metrics['confusion_matrix'] = confusion_matrix(y_test, y_pred) # .ravel() to get tn, fp, fn, tp 
-    #metrics['precision'] = average_precision_score(y_test, y_pred)
-    #metrics['recall'] = recall_score(y_test, y_pred) 
-    #metrics['report'] = classification_report(y_test, y_pred, output_dict=True)
+    report = classification_report(y_test, y_pred, output_dict=True)
 
-    """
-    print(metrics['report'])
-    print(type(metrics['report']))
-    print(metrics['report'].keys())
-    print(metrics['report']['4'])"""
+    # Adding precision, recall, f1 and support for each class + overall <accuracy, macro avg, weighted avg>
+    for class_name in report.keys():
+        if(isinstance(report[class_name], dict)):
+            for metric in report[class_name].keys():
+                metrics['-'.join([str(class_name), metric])] = report[class_name][metric]
+        else:
+            metrics[class_name] = report[class_name]
+    
     return metrics
 
 def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size, epochs, logdir):

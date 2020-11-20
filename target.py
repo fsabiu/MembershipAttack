@@ -84,7 +84,7 @@ def gridSearch(dataset, model, verbose = False):
     label = ''
 
     # MLFlow directory and experiment
-    mlflow.set_tracking_uri('http://localhost:5000')
+    print("Results available at " + mlflow.get_tracking_uri())
     experiment_name = ' '.join([dataset, model])
 
     if (dataset == 'adult'):
@@ -155,7 +155,7 @@ def gridSearch(dataset, model, verbose = False):
     
     # Starting grid search
     print("Running grid search with ",len(params_list)," models")
-    for i, params in enumerate(params_list[:10]):
+    for i, params in enumerate(params_list):
         print("Running train ... (" + str(i + 1) + "/" + str(len(params_list)) + ")")
         res = train(X_train, y_train, X_val, y_val, X_test, y_test, model, params)
 
