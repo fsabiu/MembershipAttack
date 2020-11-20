@@ -1,5 +1,6 @@
 from _collections import defaultdict
 import dask.dataframe as dd
+import mlflow
 import numpy as np
 import pandas as pd
 import pickle
@@ -12,8 +13,8 @@ from tensorboard.plugins.hparams import api as hp
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
-#path = '/mnt/dati/fsabiu/Code2'
-path = 'D:/Drive/Thesis/Code2'
+path = '/mnt/dati/fsabiu/Code2'
+#path = 'D:/Drive/Thesis/Code2'
 sys.path.insert(0, path)
 
 def encode_dataset(df, class_name):
@@ -170,31 +171,19 @@ def load_obj(file_path):
     with open(path + '/' + file_path + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def make_report(model, params, evaluation, logdir):
+def make_report(model, params, metrics):
+    
+    # Starting MLFlow run
+    mlflow.start_run(run_name=str(params))
 
-    params_dict = {}
-    #params_dict['model'] = model
-    
-    
-    # Adding model parameters
-    for param in params.keys():
-        params_dict[param] = hp.HParam(param)
-    
-    # Metrics
-    METRIC_ACCURACY = 'accuracy'
-    METRIC_PRECISION = 'precision'
-    METRIC_RECALL = 'recall'
-    # write model report
-    
-    # Writing
-    with tf.summary.create_file_writer(logdir).as_default():
-        hp.hparams(params_dict)
-        tf.summary.scalar(METRIC_ACCURACY, float(
-            evaluation["accuracy"]), step=1)
-        tf.summary.scalar(METRIC_PRECISION, float(
-            evaluation["precision"]), step=1)
-        tf.summary.scalar(METRIC_RECALL, float(
-            evaluation["recall"]), step=1)
+    # Logging model parameters
+    mlflow.log_params(params)
+
+    # Logging model metrics
+    mlflow.log_metrics(metrics)
+
+    # Ending MLFlow run
+    mlflow.end_run()
 
     return
 
@@ -217,6 +206,7 @@ def model_creation(hidden_layers, hidden_units, act_function, learning_rate, opt
 
 def model_evaluation(modelType, model, X_test, y_test):
 
+    metrics = {}
     y_pred = None
 
     if (modelType == 'NN'):
@@ -225,16 +215,19 @@ def model_evaluation(modelType, model, X_test, y_test):
     if (modelType == 'RF'):
         y_pred = model.predict(X_test)
 
-    evaluation = {}
-    evaluation['accuracy'] = accuracy_score(y_test, y_pred)
-    evaluation['accuracy_raw'] = accuracy_score(y_test, y_pred, normalize=False)
-    evaluation['confusion_matrix'] = confusion_matrix(y_test, y_pred) # .ravel() to get tn, fp, fn, tp 
-    evaluation['precision'] = average_precision_score(y_test, y_pred)
-    evaluation['recall'] = recall_score(y_test, y_pred) 
-    evaluation['report'] = classification_report(y_test, y_pred)
+    metrics['accuracy'] = accuracy_score(y_test, y_pred)
+    #metrics['accuracy_raw'] = accuracy_score(y_test, y_pred, normalize=False)
+    #metrics['confusion_matrix'] = confusion_matrix(y_test, y_pred) # .ravel() to get tn, fp, fn, tp 
+    #metrics['precision'] = average_precision_score(y_test, y_pred)
+    #metrics['recall'] = recall_score(y_test, y_pred) 
+    #metrics['report'] = classification_report(y_test, y_pred, output_dict=True)
 
-    print(evaluation['report'])
-    return evaluation
+    """
+    print(metrics['report'])
+    print(type(metrics['report']))
+    print(metrics['report'].keys())
+    print(metrics['report']['4'])"""
+    return metrics
 
 def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size, epochs, logdir):
 
@@ -442,5 +435,5 @@ def save_obj(obj, file_path):
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
 def splitDataset(dataset): # to do
-    data = pd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv', dtype = dtypes)
+    data = pd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv')
     return None

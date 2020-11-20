@@ -1,5 +1,6 @@
 from datetime import datetime
 from itertools import product
+import mlflow
 import numpy as np
 import pandas as pd
 import sklearn
@@ -11,7 +12,7 @@ from util import make_report, model_creation, model_evaluation, model_training, 
 
 sys.path.insert(0, path)
 
-def train(X_train, y_train, X_val, y_val, X_test, y_test, model, params, logdir):
+def train(X_train, y_train, X_val, y_val, X_test, y_test, model, params):
     bb = None
     trained_bb = None
 
@@ -35,7 +36,7 @@ def train(X_train, y_train, X_val, y_val, X_test, y_test, model, params, logdir)
     evaluation = model_evaluation(modelType = model, model = trained_bb, X_test = X_test, y_test = y_test)
 
     # Write on TensorBoard
-    make_report(model, params, evaluation, logdir)
+    make_report(model, params, evaluation)
 
     return True # relevant metrics
 
@@ -65,25 +66,11 @@ def prepareBBdata(dataset, label, model):
 
     if (model == 'RF'):
         # Data
-        bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_e.csv')
-        bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_e.csv')
-        bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_e.csv')
+        bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', nrows = 5000)
+        bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', nrows = 880)
+        bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv', nrows = 1000)
 
         prepareData = prepareRFdata
-
-    if(dataset == 'texas'):
-    
-        if (model == 'NN'):
-            # Data
-            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train.csv')
-            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val.csv')
-            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test.csv')
-
-        if (model == 'RF'):
-            # Data
-            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', nrows = 5000)
-            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', nrows = 880)
-            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv', nrows = 1000)
 
     X_train, y_train = prepareData(bb_train, label)
     X_val, y_val = prepareData(bb_val, label)
@@ -95,7 +82,10 @@ def gridSearch(dataset, model, verbose = False):
     
     grid_params = {}
     label = ''
-    logdir = path + '/data/' + dataset + '/target/' + model + '/'
+
+    # MLFlow directory and experiment
+    mlflow.set_tracking_uri('http://localhost:5000')
+    experiment_name = ' '.join([dataset, model])
 
     if (dataset == 'adult'):
         label = 'class'
@@ -149,7 +139,7 @@ def gridSearch(dataset, model, verbose = False):
                 'min_samples_split': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
                 'min_samples_leaf': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
                 'n_estimators': [int(x) for x in np.linspace(start = 100, stop = 2000, num = 10)],
-                'max_features': ['auot', 'sqrt', 0.2, 0.4, 0.6],
+                'max_features': ['auto', 'sqrt', 0.2, 0.4, 0.6],
                 'criterion' : ['gini', 'entropy']
             }
 
@@ -160,11 +150,14 @@ def gridSearch(dataset, model, verbose = False):
     # Data
     X_train, y_train, X_val, y_val, X_test, y_test = prepareBBdata(dataset, label, model)
 
+    # Setting MLFlow
+    mlflow.set_experiment(experiment_name = experiment_name)
+    
+    # Starting grid search
     print("Running grid search with ",len(params_list)," models")
-    for i, params in enumerate(params_list):
-        date = datetime.now().strftime("%Y%m%d_%H%M%S")+"/"
-        print("Running train ... (" + str(i + 1) + "/" + str(len(params_list) + ")"))
-        res = train(X_train, y_train, X_val, y_val, X_test, y_test, model, params, logdir + str(date))
+    for i, params in enumerate(params_list[:10]):
+        print("Running train ... (" + str(i + 1) + "/" + str(len(params_list)) + ")")
+        res = train(X_train, y_train, X_val, y_val, X_test, y_test, model, params)
 
     return True
 

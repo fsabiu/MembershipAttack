@@ -13,8 +13,6 @@ def preprocess(dataset, explainer):
     # Dataset preparation
     data =  class_name = None 
     
-    print("Preparation completed")
-    
     encoded_data = None
 
     if (dataset == 'texas'): #
@@ -26,9 +24,6 @@ def preprocess(dataset, explainer):
         #unique_values = load_obj('data/' + dataset + '/unique_values')
         
         #encode_split_dataset(dataset, class_name, dtypes, unique_values, class_name)
-
-        split
-        print("Splitted and encoded")
         
         data = pd.read_csv('data/' + dataset + '/' + dataset +'_mapped.csv', dtype = dtypes)
         """
@@ -36,8 +31,9 @@ def preprocess(dataset, explainer):
         encoded_data = encode_Dask_dataset(encoded_data, class_name, dtypes, excluded_cols = 'PRINC_SURG_PROC_CODE')
         encoded_data.to_csv('data/' + dataset + '/texas_encoded.csv', index=False)
         """
-
+        print("Splitting ...")
         bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)
+        print("Splitted")
 
         bb_train.to_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', index=False)
         print("bb_train saved")
