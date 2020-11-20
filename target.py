@@ -71,9 +71,19 @@ def prepareBBdata(dataset, label, model):
 
         prepareData = prepareRFdata
 
-    if(dataset == 'texas'): # Use 20% of bb_train
-            bb_train, _ = train_test_split(bb_train, test_size = 0.8, random_state = 0, stratify = bb_train[label])
+    if(dataset == 'texas'):
+    
+        if (model == 'NN'):
+            # Data
+            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train.csv')
+            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val.csv')
+            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test.csv')
 
+        if (model == 'RF'):
+            # Data
+            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', nrows = 5000)
+            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', nrows = 880)
+            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv', nrows = 1000)
 
     X_train, y_train = prepareData(bb_train, label)
     X_val, y_val = prepareData(bb_val, label)
@@ -96,7 +106,6 @@ def gridSearch(dataset, model, verbose = False):
                 'act_funct': ['relu'],
                 'learning_rate': [1e-6],
                 'optimizer': [SGD],
-                'pool_size': [1],
                 'batch_size': [32],
                 'epochs': [200]
             }
@@ -139,8 +148,9 @@ def gridSearch(dataset, model, verbose = False):
                 'max_depth': [int(x) for x in np.linspace(start = 10, stop = 200, num = 20)] + [None],
                 'min_samples_split': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
                 'min_samples_leaf': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
-                'n_estimators': [int(x) for x in np.linspace(start = 100, stop = 2000, num = 20)],
-                'max_features': ['auot', 'sqrt', 0.2, 0.4, 0.6]
+                'n_estimators': [int(x) for x in np.linspace(start = 100, stop = 2000, num = 10)],
+                'max_features': ['auot', 'sqrt', 0.2, 0.4, 0.6],
+                'criterion' : ['gini', 'entropy']
             }
 
     # Listing params combinations
@@ -151,8 +161,9 @@ def gridSearch(dataset, model, verbose = False):
     X_train, y_train, X_val, y_val, X_test, y_test = prepareBBdata(dataset, label, model)
 
     print("Running grid search with ",len(params_list)," models")
-    for params in params_list:
+    for i, params in enumerate(params_list):
         date = datetime.now().strftime("%Y%m%d_%H%M%S")+"/"
+        print("Running train ... (" + str(i + 1) + "/" + str(len(params_list) + ")"))
         res = train(X_train, y_train, X_val, y_val, X_test, y_test, model, params, logdir + str(date))
 
     return True

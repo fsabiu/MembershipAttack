@@ -78,7 +78,7 @@ def encode_Dask_dataset(data, class_name, dtypes, excluded_cols):
 
 def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_cols):
     rows = 0
-    chunk_size = 200000
+    chunk_size = 10000
     
     for index, data in enumerate(pd.read_csv('data/' + dataset + '/' + dataset +'.csv', dtype = dtypes, chunksize=chunk_size),start=1):
         rows += chunk_size
@@ -173,17 +173,18 @@ def load_obj(file_path):
 def make_report(model, params, evaluation, logdir):
 
     params_dict = {}
-    params_dict['model'] = model
+    #params_dict['model'] = model
     
-    """
+    
     # Adding model parameters
     for param in params.keys():
-        hp.HParam(param) = params_dict[param]
-    """
+        params_dict[param] = hp.HParam(param)
+    
     # Metrics
     METRIC_ACCURACY = 'accuracy'
     METRIC_PRECISION = 'precision'
     METRIC_RECALL = 'recall'
+    # write model report
     
     # Writing
     with tf.summary.create_file_writer(logdir).as_default():
@@ -236,11 +237,9 @@ def model_evaluation(modelType, model, X_test, y_test):
     return evaluation
 
 def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size, epochs, logdir):
-    if pool_size != 1:
-        X_train = apply_pooling(X_train, pool_size)
 
-    earlystop_callback = tf.keras.callbacks.EarlyStopping(
-        monitor='val_loss', mode = "min", min_delta = 0.001, patience=10, restore_best_weights=True)
+    """earlystop_callback = tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', mode = "min", min_delta = 0.001, patience=10, restore_best_weights=True)"""
 
     model.fit(X_train, y_train, 
         batch_size = batch_size,
@@ -248,7 +247,7 @@ def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size,
         validation_data = (X_val, y_val),
         callbacks = [
             tf.keras.callbacks.TensorBoard(logdir),  # log metrics
-            earlystop_callback
+            # earlystop_callback
         ]
     )
 
@@ -313,7 +312,7 @@ def prepare_dataset(dataset, explainer):
         
         types = dict()
         for col in data.columns:
-            if(col in {'PRIVATE_AMOUNT', 'SEMI_PRIVATE_AMOUNT', 'WARD_AMOUNT', 'ICU_AMOUNT', 'CCU_AMOUNT', 'OTHER_AMOUNT', 'PHARM_AMOUNT', 'MEDSURG_AMOUNT', 'DME_AMOUNT', 'USED_DME_AMOUNT', 'PT_AMOUNT', 'OT_AMOUNT', 'SPEECH_AMOUNT', 'IT_AMOUNT', 'BLOOD_AMOUNT', 'BLOOD_ADMIN_AMOUNT', 'OR_AMOUNT', 'LITH_AMOUNT', 'CARD_AMOUNT', 'ANES_AMOUNT', 'LAB_AMOUNT', 'RAD_AMOUNT', 'MRI_AMOUNT', 'OP_AMOUNT', 'ER_AMOUNT', 'AMBULANCE_AMOUNT', 'PRO_FEE_AMOUNT', 'ORGAN_AMOUNT', 'ESRD_AMOUNT', 'CLINIC_AMOUNT', 'TOTAL_CHARGES', 'TOTAL_NON_COV_CHARGES', 'TOTAL_CHARGES_ACCOMM', 'TOTAL_NON_COV_CHARGES_ACCOMM', 'TOTAL_CHARGES_ANCIL', 'TOTAL_NON_COV_CHARGES_ANCIL',}):
+            if(col in {'BLOOD_ADM_AMOUNT', 'PRIVATE_AMOUNT', 'SEMI_PRIVATE_AMOUNT', 'WARD_AMOUNT', 'ICU_AMOUNT', 'CCU_AMOUNT', 'OTHER_AMOUNT', 'PHARM_AMOUNT', 'MEDSURG_AMOUNT', 'DME_AMOUNT', 'USED_DME_AMOUNT', 'PT_AMOUNT', 'OT_AMOUNT', 'SPEECH_AMOUNT', 'IT_AMOUNT', 'BLOOD_AMOUNT', 'BLOOD_ADMIN_AMOUNT', 'OR_AMOUNT', 'LITH_AMOUNT', 'CARD_AMOUNT', 'ANES_AMOUNT', 'LAB_AMOUNT', 'RAD_AMOUNT', 'MRI_AMOUNT', 'OP_AMOUNT', 'ER_AMOUNT', 'AMBULANCE_AMOUNT', 'PRO_FEE_AMOUNT', 'ORGAN_AMOUNT', 'ESRD_AMOUNT', 'CLINIC_AMOUNT', 'TOTAL_CHARGES', 'TOTAL_NON_COV_CHARGES', 'TOTAL_CHARGES_ACCOMM', 'TOTAL_NON_COV_CHARGES_ACCOMM', 'TOTAL_CHARGES_ANCIL', 'TOTAL_NON_COV_CHARGES_ANCIL',}):
                 types[col] = 'float32'
             else:
                 types[col] = 'object'
@@ -420,7 +419,7 @@ def remove_missing_values(df):
 def split(dataset, y):
 
     # Shuffle data
-    # TO DO
+    dataset = dataset.sample(frac=1).reset_index(drop=True)
 
     ochenta, veinte = train_test_split(dataset, test_size = 0.2, random_state = 0, stratify = dataset[y])
 
