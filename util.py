@@ -8,8 +8,6 @@ import sklearn
 import sys
 from sklearn.metrics import average_precision_score, accuracy_score, classification_report, confusion_matrix, recall_score
 from sklearn.model_selection import train_test_split
-import tensorboard
-from tensorboard.plugins.hparams import api as hp
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
@@ -408,7 +406,7 @@ def prepare_dataset(dataset, explainer):
 
 def prepareNNdata(dataset, label):
     y = dataset[label].values
-    dataset.drop([label], axis=1)
+    dataset.drop([label], axis=1, inplace = True)
 
     cols = dataset.columns
     x = np.array(dataset[cols])
@@ -417,7 +415,7 @@ def prepareNNdata(dataset, label):
 
 def prepareRFdata(dataset, label):
     y = dataset[label].values
-    dataset.drop([label], axis=1)
+    dataset.drop([label], axis=1, inplace = True)
 
     cols = dataset.columns
     x = np.array(dataset[cols])
