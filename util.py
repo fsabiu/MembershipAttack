@@ -13,12 +13,12 @@ from tensorboard.plugins.hparams import api as hp
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
-path = '/mnt/dati/fsabiu/Code2'
-#path = 'D:/Drive/Thesis/Code2'
+#path = '/mnt/dati/fsabiu/Code2'
+path = 'D:/Drive/Thesis/Code2'
 sys.path.insert(0, path)
 
 def encode_dataset(df, class_name):
-
+    print("Encoding dataset ...")
     df = remove_missing_values(df)
 
     numeric_columns = get_numeric_columns(df)
@@ -140,10 +140,31 @@ def get_features_map(feature_names, real_feature_names):
     return features_map
 
 def get_numeric_columns(df):
+    """
+    # Returns a list of numeric columns of the dataframe df
+
+    # Parameters:
+    #    df (Pandas dataframe): The dataframe from which extract the columns 
+
+    # Returns:
+    #    A list of columns names (strings) corresponding to numeric columns
+
+    """
     numeric_columns = list(df._get_numeric_data().columns)
     return numeric_columns
 
 def get_unique_df_values(dataset, dtypes):
+    """
+    # Returns a dictionary of type {dict: list}, corresponding to {columns -> unique values}
+
+    # Parameters:
+    #    df (Pandas dataframe): The dataframe from which extract the columns unique values
+    #   dtypes (dictionary): Dictionary of column types
+    
+    # Returns:
+    #    A dictionary of {columns -> unique values}
+
+    """
     data = pd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv', dtype = dtypes)
 
     unique_values = {}
@@ -186,6 +207,40 @@ def make_report(model, params, metrics):
     mlflow.end_run()
 
     return
+
+def map_columns(data, class_name):
+    # Dictionary of mapped columns
+    newcols = {}
+    colnames = list(data.columns)
+    for i, col in enumerate(colnames):
+        print("Mapping column: " + col + " ... (" + str(i+1) + "/" + str(len(colnames)) + ")")
+        if(col == class_name or data[col].dtype == 'object'): #PRINC_SURG_PROC_CODE must be int64
+            # Mapping dictionary
+            mapDict = {'NaN': 0, 'nan': 0, 'X': 1, 'A':2}
+
+            new_column = []
+            append = new_column.append
+
+            # Mapping values
+            #for el in data[col].compute(): for dask dataframes
+            for el in data[col]:
+                if el not in mapDict.keys():   # If mapping is not defined  
+                    # Define mapping
+                    mapDict[el] = len(mapDict)
+                
+                # Map element    
+                append(mapDict[el])
+
+            # Appending mapped columns to dictionary   
+            newcols[col] = new_column
+
+    print("Number of columns: " + str(len(newcols)))
+
+    for i, col in enumerate(newcols.keys()):
+        print("Adding column: " + col + " ... (" + str(i+1) + "/" + str(len(newcols)) + ")")
+        data[col] = pd.Series(newcols[col])    
+
+    return data
 
 def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, size=None):
     model = tf.keras.models.Sequential()
@@ -281,6 +336,7 @@ def prepare_dataset(dataset, explainer):
 
     if (dataset=='texas' and explainer == 'lime'):
         # Reading and processing files - done in file
+        class_name = 'PRINC_SURG_PROC_CODE'
         years = ['2006', '2007', '2008', '2009']
         dfs = []
         
@@ -312,55 +368,29 @@ def prepare_dataset(dataset, explainer):
         data.astype(types)
 
         """
-        ## CODE FOR COLUMN MAPPING
-        dtypes = load_obj('data/texas' + '/dtypes')
-        data = dd.read_csv(path + '/data/texas/texas.csv', dtype = dtypes) # Dask
-
-        # Dictionary of mapped columns
-        newcols = {}
-        colnames = list(data.columns)
-        for i, col in enumerate(colnames):
-            print("Mapping column: " + col + " ... (" + str(i+1) + "/" + str(len(colnames)) + ")")
-            if(col == 'PRINC_SURG_PROC_CODE' or data[col].dtype == 'object'): #PRINC_SURG_PROC_CODE must be int64
-                # Mapping dictionary
-                mapDict = {'NaN': 0, 'nan': 0, 'X': 1, 'A':2}
-
-                new_column = []
-                append = new_column.append
-
-                # Mapping values
-                for el in data[col].compute():
-                    if el not in mapDict.keys():   # If mapping is not defined  
-                        # Define mapping
-                        mapDict[el] = len(mapDict)
-                    
-                    # Map element    
-                    append(mapDict[el])
-
-                # Appending mapped columns to dictionary   
-                newcols[col] = new_column
-
-        save_obj(newcols, 'data/texas/newcolumns')
-        
-        print("Reading new columns")
-        newcols = load_obj('data/texas/newcolumns') # dict {name_col: values_list}
-        print("Number of read columns: " + str(len(newcols)))
-
-        print("Reading dataset") # Pandas
-        data = pd.read_csv('data/texas/texas.csv', dtype = dtypes)
-
-        for i, col in enumerate(newcols.keys()):
-            print("Adding column: " + col + " ... (" + str(i+1) + "/" + str(len(newcols)) + ")")
-            data[col] = pd.Series(newcols[col])
+        data = map_columns(data, class_name)
         
         # Writing dataset
         print("Writing dataframe")
         data.to_csv('data/' + dataset + '/' + dataset +'_mapped.csv', index=False)
         """
-        # Returning dataset and class
-        class_name = 'PRINC_SURG_PROC_CODE'
+        return data, class_name
 
-    if (dataset=='mobility' and explainer == 'lime'):
+    if (dataset == 'texas_red' and explainer == 'lime'):
+        class_name = 'PRINC_SURG_PROC_CODE'
+        dtypes = load_obj('data/texas' + '/dtypes')
+        
+        # Reading primary external causes of injury, 
+        data = pd.read_csv('data/' + 'texas' + '/' + 'texas' +'.csv', 
+        usecols = ['E_CODE_1', 'ADMITTING_DIAGNOSIS', 'SEX_CODE', 'RACE' ,'PAT_AGE', 'LENGTH_OF_STAY','PRINC_SURG_PROC_CODE'],
+        dtype=dtypes)
+
+        print("Mapping columns...")
+        data = map_columns(data, class_name)
+
+        return data, class_name
+
+    if (dataset== 'mobility' and explainer == 'lime'):
         data = pd.read_csv('data/' + dataset + '/' + dataset + '.csv', skipinitialspace=True, na_values='?', keep_default_na=True)
         
         # Removing columns        
@@ -409,7 +439,17 @@ def remove_missing_values(df):
     return df
 
 def split(dataset, y):
+    """
+    # Returns a shuffled, stratified split of the input dataset
 
+    # Parameters:
+    #   dataset (Pandas dataframe): The dataframe from which extract the columns unique values
+    #   y (string): name of the column representing the target, i.e. column on which stratify
+
+    # Returns:
+    #    A dictionary of {columns -> unique values}
+
+    """
     # Shuffle data
     dataset = dataset.sample(frac=1).reset_index(drop=True)
 
@@ -432,7 +472,3 @@ def split(dataset, y):
 def save_obj(obj, file_path):
     with open(path + '/' + file_path + '.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-
-def splitDataset(dataset): # to do
-    data = pd.read_csv(path + '/data/' + dataset + '/' + dataset +'.csv')
-    return None

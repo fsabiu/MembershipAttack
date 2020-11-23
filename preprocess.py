@@ -18,22 +18,10 @@ def preprocess(dataset, explainer):
     if (dataset == 'texas'): #
         class_name = 'PRINC_SURG_PROC_CODE'
         dtypes = load_obj('data/' + dataset + '/dtypes')
-        #unique_values = get_unique_df_values(dataset, dtypes)
-        #save_obj(unique_values, 'data/' + dataset + '/unique_values')
-
-        #unique_values = load_obj('data/' + dataset + '/unique_values')
-        
-        #encode_split_dataset(dataset, class_name, dtypes, unique_values, class_name)
-        
         data = pd.read_csv('data/' + dataset + '/' + dataset +'_mapped.csv', dtype = dtypes)
-        """
-        encoded_data = dd.read_csv(data/' + dataset + '/' + dataset +'.csv', dtype = dtypes) # Dask
-        encoded_data = encode_Dask_dataset(encoded_data, class_name, dtypes, excluded_cols = 'PRINC_SURG_PROC_CODE')
-        encoded_data.to_csv('data/' + dataset + '/texas_encoded.csv', index=False)
-        """
+
         print("Splitting ...")
         bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)
-        print("Splitted")
 
         bb_train.to_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', index=False)
         print("bb_train saved")
@@ -61,22 +49,22 @@ def preprocess(dataset, explainer):
     if(len(bb_train) + len(bb_val) + len(sh_train) + len(sh_val) + len(r2E) + len(test) == len(data)
     and len(bb_train_e) + len(bb_val_e) + len(sh_train_e) + len(sh_val_e) + len(r2E_e) + len(test_e) == len(encoded_data)):
         print('Dataset: ' + dataset)
-        bb_train.to_csv('data/' + dataset + '/baseline_split/bb_train.csv', index=False)
+        bb_train.to_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', index=False)
         bb_train_e.to_csv('data/' + dataset + '/baseline_split/bb_train_e.csv', index=False)
         print("bb_train saved")
-        bb_val.to_csv('data/' + dataset + '/baseline_split/bb_val.csv', index=False)
+        bb_val.to_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', index=False)
         bb_val_e.to_csv('data/' + dataset + '/baseline_split/bb_val_e.csv', index=False)
         print("bb_val saved")
-        sh_train.to_csv('data/' + dataset + '/baseline_split/sh_train.csv', index=False)
+        sh_train.to_csv('data/' + dataset + '/baseline_split/sh_train_mapped.csv', index=False)
         sh_train_e.to_csv('data/' + dataset + '/baseline_split/sh_train_e.csv', index=False)
         print("sh_train saved")
-        sh_val.to_csv('data/' + dataset + '/baseline_split/sh_val.csv', index=False)
+        sh_val.to_csv('data/' + dataset + '/baseline_split/sh_val_mapped.csv', index=False)
         sh_val_e.to_csv('data/' + dataset + '/baseline_split/sh_val_e.csv', index=False)
         print("sh_val saved")
-        r2E.to_csv('data/' + dataset + '/baseline_split/r2E.csv', index=False)
+        r2E.to_csv('data/' + dataset + '/baseline_split/r2E_mapped.csv', index=False)
         r2E_e.to_csv('data/' + dataset + '/baseline_split/r2E_e.csv', index=False)
         print("r2E saved")
-        test.to_csv('data/' + dataset + '/baseline_split/test.csv', index=False)
+        test.to_csv('data/' + dataset + '/baseline_split/test_mapped.csv', index=False)
         test_e.to_csv('data/' + dataset + '/baseline_split/test_e.csv', index=False)
         print("test saved")
     else:

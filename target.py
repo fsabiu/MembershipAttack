@@ -118,7 +118,7 @@ def gridSearch(dataset, model, verbose = False):
                 'max_features': ['sqrt']
             }
 
-    if (dataset == 'texas'):
+    if (dataset == 'texas' or dataset == 'texas_red'):
         label = 'PRINC_SURG_PROC_CODE'
         if (model == 'NN'):
             grid_params = {
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     if(len(sys.argv) != 3):
         print('Usage: ' + sys.argv[0] + ' dataset_name model')
         exit(1)
-    if (sys.argv[1] not in ['adult', 'mobility', 'texas']):
+    if (sys.argv[1] not in ['adult', 'mobility', 'texas', 'texas_red']):
         print("Unknown dataset")
         exit(1)
     
