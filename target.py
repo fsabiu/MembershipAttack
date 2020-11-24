@@ -1,6 +1,7 @@
 from datetime import datetime
 from itertools import product
 import mlflow
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import sklearn
@@ -155,11 +156,38 @@ def gridSearch(dataset, model, verbose = False):
     
     # Starting grid search
     print("Running grid search with ",len(params_list)," models")
-    for i, params in enumerate(params_list):
-        print("Running train ... (" + str(i + 1) + "/" + str(len(params_list)) + ")")
-        res = train(X_train, y_train, X_val, y_val, X_test, y_test, model, params)
+
+    # Number of processes
+    par_degree = 12
+
+    # Creating one parameters list for each process
+    params_lists = [list(a) for a in np.array_split(params_list, par_degree)]
+
+    processes = []
+
+    # Running processes
+    for i, params_list in enumerate(params_lists):
+        # creare processo
+        processes.append(mp.Process(target=train_task, args=(i + 1, params_list, X_train, y_train, X_val, y_val, X_test, y_test, model)))
+
+    # Starting grid searches
+    for p in processes:
+        p.start()
+
+    # Joining
+    for p in processes:
+        print("Process ", p, " terminated")
+        p.join()
+
+    print("Processes joined")
 
     return True
+
+def train_task(n_process, params_list, X_train, y_train, X_val, y_val, X_test, y_test, model):
+    for i, params in enumerate(params_list):
+        print("Process " + str(n_process) + "- Running train ... (" + str(i + 1) + "/" + str(len(params_list)) + ")")
+        train(X_train, y_train, X_val, y_val, X_test, y_test, model, params)
+
 
 if __name__ == "__main__":
     if(len(sys.argv) != 3):

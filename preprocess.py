@@ -4,7 +4,7 @@ import pandas as pd
 import sklearn
 from sklearn.model_selection import train_test_split
 import sys
-from util import encode_dataset, encode_Dask_dataset, encode_split_dataset, get_unique_df_values, load_obj, path, prepare_dataset, save_obj, split, splitDataset
+from util import encode_dataset, encode_Dask_dataset, encode_split_dataset, get_unique_df_values, load_obj, path, prepare_dataset, save_obj, split
 
 sys.path.insert(0, path)
 
