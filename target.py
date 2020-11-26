@@ -2,6 +2,7 @@ from datetime import datetime
 from itertools import product
 import mlflow
 import multiprocessing as mp
+import neptune
 import numpy as np
 import pandas as pd
 import sklearn
@@ -13,19 +14,20 @@ from util import make_report, model_creation, model_evaluation, model_training, 
 
 sys.path.insert(0, path)
 
-def train(X_train, y_train, X_val, y_val, X_test, y_test, model, params):
+def train(X_train, y_train, X_val, y_val, X_test, y_test, modelType, params, experiment_id):
     bb = None
     trained_bb = None
+    history = None
 
     # Training
-    if (model == 'NN'):
+    if (modelType == 'NN'):
         # Architecture
         bb = model_creation(params['hidden_layers'], params['hidden_units'], params['act_funct'], params['learning_rate'], params['optimizer'])
 
         # Training and parameters
-        trained_bb = model_training(bb, X_train, y_train, X_val, y_val, pool_size=params['pool_size'], batch_size=params['batch_size'], epochs = params['epochs'], logdir=logdir)
+        trained_bb, history = model_training(bb, X_train, y_train, X_val, y_val, pool_size= None, batch_size=params['batch_size'], epochs = params['epochs'], logdir= None)
 
-    if (model == 'RF'):
+    if (modelType == 'RF'):
         # Architecture and parameters
         bb = RandomForestClassifier(bootstrap = params['bootstrap'], max_depth = params['max_depth'], min_samples_split = params['min_samples_split'],
         min_samples_leaf = params['min_samples_leaf'], n_estimators = params['n_estimators'], max_features = params['max_features'])
@@ -34,10 +36,10 @@ def train(X_train, y_train, X_val, y_val, X_test, y_test, model, params):
         trained_bb = bb.fit(X_train, y_train)
 
     # Evaluation
-    evaluation = model_evaluation(modelType = model, model = trained_bb, X_test = X_test, y_test = y_test)
+    evaluation = model_evaluation(modelType = modelType, model = trained_bb, X_val = X_val, y_val = y_val, X_test = X_test, y_test = y_test)
 
-    # Write on TensorBoard
-    make_report(model, params, evaluation)
+    # If in top 50 write on TensorBoard
+    make_report(modelType = modelType, model = trained_bb, history = history, params = params, metrics = evaluation, experiment_id = experiment_id)
 
     return True # relevant metrics
 
@@ -92,7 +94,7 @@ def gridSearch(dataset, model, verbose = False):
         label = 'class'
         if (model == 'NN'):
             grid_params = {
-                'hidden_layers': [1],
+                'hidden_layers': [1, 2],
                 'hidden_units': [2],
                 'act_funct': ['relu'],
                 'learning_rate': [1e-6],
@@ -119,6 +121,31 @@ def gridSearch(dataset, model, verbose = False):
                 'max_features': ['sqrt']
             }
 
+    if (dataset == 'mobility'):
+        label = 'class'
+
+        if (model == 'NN'):
+            grid_params = {
+                'hidden_layers': [1, 2, 3],
+                'hidden_units': [2],
+                'act_funct': ['relu'],
+                'learning_rate': [1e-6],
+                'optimizer': [SGD],
+                'batch_size': [32],
+                'epochs': [200]
+            }
+
+        if (model == 'RF'):
+            grid_params = {
+                'bootstrap': [True],
+                'max_depth': [10],
+                'min_samples_split': [4],
+                'min_samples_leaf': [4],
+                'n_estimators': [5],
+                'max_features': ['sqrt']
+            }
+
+
     if (dataset == 'texas' or dataset == 'texas_red'):
         label = 'PRINC_SURG_PROC_CODE'
         if (model == 'NN'):
@@ -128,7 +155,6 @@ def gridSearch(dataset, model, verbose = False):
                 'act_funct': ['relu', 'tanh'],
                 'learning_rate': [1e-6, 1e-5, 1e-7],
                 #'optimizer': [Adam, RMSprop],
-                'pool_size': [1, 8],
                 'batch_size': [None, 32],
                 'epochs': [200, 300]
             }
@@ -153,7 +179,8 @@ def gridSearch(dataset, model, verbose = False):
 
     # Setting MLFlow
     mlflow.set_experiment(experiment_name = experiment_name)
-    
+    exp = mlflow.get_experiment_by_name(experiment_name)
+
     # Starting grid search
     print("Running grid search with ",len(params_list)," models")
 
@@ -168,7 +195,7 @@ def gridSearch(dataset, model, verbose = False):
     # Running processes
     for i, params_list in enumerate(params_lists):
         # creare processo
-        processes.append(mp.Process(target=train_task, args=(i + 1, params_list, X_train, y_train, X_val, y_val, X_test, y_test, model)))
+        processes.append(mp.Process(target=train_task, args=(i + 1, params_list, X_train, y_train, X_val, y_val, X_test, y_test, model, exp.experiment_id)))
 
     # Starting grid searches
     for p in processes:
@@ -183,10 +210,10 @@ def gridSearch(dataset, model, verbose = False):
 
     return True
 
-def train_task(n_process, params_list, X_train, y_train, X_val, y_val, X_test, y_test, model):
+def train_task(n_process, params_list, X_train, y_train, X_val, y_val, X_test, y_test, model, experiment_id):
     for i, params in enumerate(params_list):
         print("Process " + str(n_process) + "- Running train ... (" + str(i + 1) + "/" + str(len(params_list)) + ")")
-        train(X_train, y_train, X_val, y_val, X_test, y_test, model, params)
+        train(X_train, y_train, X_val, y_val, X_test, y_test, model, params, experiment_id)
 
 
 if __name__ == "__main__":

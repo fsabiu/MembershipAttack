@@ -1,6 +1,7 @@
 from _collections import defaultdict
 import dask.dataframe as dd
 import mlflow
+import neptune
 import numpy as np
 import pandas as pd
 import pickle
@@ -190,13 +191,30 @@ def load_obj(file_path):
     with open(path + '/' + file_path + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def make_report(model, params, metrics):
-    
+def make_report(modelType, model, history, params, metrics, experiment_id):
+
     # Starting MLFlow run
-    mlflow.start_run(run_name=str(params))
+    mlflow.start_run(run_name=str(params), experiment_id= experiment_id)
+    
+    print("Uri: " + str(mlflow.get_artifact_uri()))
 
     # Logging model parameters
     mlflow.log_params(params)
+
+    # Adding model history
+    if (modelType == 'NN'):
+        # Logging training history
+        for epoch, tr_acc in enumerate(history.history['accuracy']):
+            mlflow.log_metric(key="Training accuracy", value = tr_acc, step = epoch+1)
+
+        for epoch, val_acc in enumerate(history.history['val_accuracy']):
+            mlflow.log_metric(key="Validation accuracy", value = val_acc, step = epoch+1)
+
+        for epoch, tr_loss in enumerate(history.history['loss']):
+            mlflow.log_metric(key="Training loss", value = tr_loss, step = epoch+1)
+
+        for epoch, val_loss in enumerate(history.history['val_loss']):
+            mlflow.log_metric(key="Validation loss", value = val_loss, step = epoch+1)
 
     # Logging model metrics
     mlflow.log_metrics(metrics)
@@ -257,19 +275,26 @@ def model_creation(hidden_layers, hidden_units, act_function, learning_rate, opt
 
     return model
 
-def model_evaluation(modelType, model, X_test, y_test):
+def model_evaluation(modelType, model, X_val, y_val, X_test, y_test):
 
     metrics = {}
-    y_pred = None
+    y_val_pred = None
+    y_test_pred = None
 
     if (modelType == 'NN'):
-        y_pred = model.predict_classes(X_test)
+        y_test_pred = np.argmax(model.predict(X_test), axis=-1)
+        y_val_pred = np.argmax(model.predict(X_val), axis=-1)
+        #y_pred = model.predict_classes(X_test)
 
     if (modelType == 'RF'):
-        y_pred = model.predict(X_test)
+        y_test_pred = model.predict(X_test)
+        y_val_pred = model.predict(X_val)
+        #y_pred = model.predict(X_test)
 
-    metrics['accuracy'] = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred, output_dict=True)
+    metrics['accuracy'] = accuracy_score(y_val, y_val_pred)
+    metrics['test_accuracy'] = accuracy_score(y_test, y_test_pred)
+    
+    report = classification_report(y_val, y_val_pred, output_dict=True)
 
     # Adding precision, recall, f1 and support for each class + overall <accuracy, macro avg, weighted avg>
     for class_name in report.keys():
@@ -286,12 +311,12 @@ def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size,
     """earlystop_callback = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss', mode = "min", min_delta = 0.001, patience=10, restore_best_weights=True)"""
 
-    model.fit(X_train, y_train, 
+    history = model.fit(X_train, y_train, 
         batch_size = batch_size,
         epochs = epochs,
         validation_data = (X_val, y_val),
         callbacks = [
-            tf.keras.callbacks.TensorBoard(logdir),  # log metrics
+            #tf.keras.callbacks.TensorBoard(logdir),  # log metrics
             # earlystop_callback
         ]
     )
@@ -301,7 +326,7 @@ def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size,
 
     model.summary()
 
-    return model
+    return model, history
 
 def one_hot_encoding(df, class_name):
     if not isinstance(class_name, list):
