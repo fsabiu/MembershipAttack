@@ -327,10 +327,27 @@ def prepare_dataset(dataset, explainer):
 
     if (dataset == 'adult' and explainer == 'lime'):
         data = pd.read_csv('data/' + dataset + '/' + dataset + '.csv')
+        class_name = 'class'
+
+        # Removing columns
         columns2remove = ['fnlwgt', 'education-num']
         data.drop(columns2remove, inplace=True, axis=1)
+
+        # Removing duplicates
         data = data.drop_duplicates()
+        
+
+    if (dataset== 'mobility' and explainer == 'lime'):
+        data = pd.read_csv('data/' + dataset + '/' + dataset + '.csv', skipinitialspace=True, na_values='?', keep_default_na=True)
         class_name = 'class'
+
+        # Removing columns        
+        columns2remove = ['uid', 'wait']
+        data.drop(columns2remove, inplace=True, axis=1)
+        
+        # Dropping duplicates and missing values
+        data = data.drop_duplicates().dropna()
+        
 
     if (dataset=='texas' and explainer == 'lime'):
         # Reading and processing files - done in file
@@ -372,7 +389,6 @@ def prepare_dataset(dataset, explainer):
         print("Writing dataframe")
         data.to_csv('data/' + dataset + '/' + dataset +'_mapped.csv', index=False)
         """
-        return data, class_name
 
     if (dataset == 'texas_red' and explainer == 'lime'):
         class_name = 'PRINC_SURG_PROC_CODE'
@@ -382,25 +398,6 @@ def prepare_dataset(dataset, explainer):
         data = pd.read_csv('data/' + 'texas' + '/' + 'texas' +'.csv', 
         usecols = ['E_CODE_1', 'ADMITTING_DIAGNOSIS', 'SEX_CODE', 'RACE' ,'PAT_AGE', 'LENGTH_OF_STAY','PRINC_SURG_PROC_CODE'],
         dtype=dtypes)
-
-        print("Mapping columns...")
-        data = map_columns(data, class_name)
-
-        return data, class_name
-
-    if (dataset== 'mobility' and explainer == 'lime'):
-        data = pd.read_csv('data/' + dataset + '/' + dataset + '.csv', skipinitialspace=True, na_values='?', keep_default_na=True)
-        
-        # Removing columns        
-        columns2remove = ['uid', 'wait']
-        data.drop(columns2remove, inplace=True, axis=1)
-        
-        # Dropping duplicates
-        data = data.drop_duplicates()
-        class_name = 'class'
-
-    # Shuffling data
-    data = data.sample(frac=1).reset_index(drop=True)
 
     return data, class_name
 
