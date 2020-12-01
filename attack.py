@@ -7,7 +7,7 @@ from util import model_creation, model_training, model_evaluation
 class Attack(object):
 
     def __init__(self, attack_model_type, dataset, target, target_model, target_train, target_val, class_name, n_classes):
-        # Initializations
+        # Target model and data
         self.dataset_name = dataset
         self.n_classes = n_classes
         self.target = target
@@ -22,12 +22,12 @@ class Attack(object):
         self.shadow_data = None
         self.shadow_train_size = None
         self.shadow_val_size = None
-        self.shadow_models
+        self.shadow_models = None
         self.shadow_params = None
 
         # Attack properties
         self.attack_model_type = attack_model_type
-        self.attack_models = [None * n_classes]
+        self.attack_models = None
         self.X_train_att = None
         self.y_train_att = None
         self.X_val_att = None
@@ -62,7 +62,7 @@ class Attack(object):
         X_train_target, y_train_target = prepare_target_data(self.target_train)
         X_val_target, y_val_target = prepare_target_data(self.target_val)
 
-        # BlackBox prediction
+        # Target predictions
         pred_train_target = self.targetPredict(X_train_target)
         pred_val_target = self.targetPredict(X_val_target)
 
@@ -161,7 +161,6 @@ class Attack(object):
         self.shadow_params = shadow_params
         self.attack_params = attack_params
         self.shadow_models = [None * self.n_shadow_models]
-
 
         self.prepareAttackData()
 
