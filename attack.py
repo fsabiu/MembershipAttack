@@ -1,17 +1,18 @@
+from abc import ABC
 from attack_util import prepare_target_data
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from util import model_creation, model_training, model_evaluation
 
-class Attack(object):
+class Attack(ABC):
 
-    def __init__(self, attack_model_type, dataset, target, target_model, target_train, target_val, class_name, n_classes):
+    def __init__(self, attack_model_type, dataset, target, target_train, target_val, class_name, n_classes):
         # Target model and data
         self.dataset_name = dataset
         self.n_classes = n_classes
+        self.target_labels = {}
         self.target = target
-        self.target_model = target_model
         self.target_train = target_train
         self.target_val = target_val
         self.target_class_name = class_name
@@ -34,12 +35,9 @@ class Attack(object):
         self.y_val_att = None
         self.X_true_att = None
 
+    @abstractmethod
     def targetPredict(self, X):
-        if(self.target_model == 'NN'):
-            return self.target.predict(X)
-
-        if(self.target_model == 'RF'):
-            return self.target.predict(X)
+        pass
 
     def getTarget(self):
         return self.target
@@ -51,6 +49,10 @@ class Attack(object):
         return self.dataset_name
 
     def prepareAttackData(self):
+
+        # Mapping labels
+        for i, label in enumerate(self.dataset[self.class_name].unique()):
+            self.target_labels[i] = label
 
         # Shaping attack training data
         self.X_train_att = np.zeros(((self.shadow_train_size + self.shadow_val_size) * self.n_shadow_models,1))
@@ -98,7 +100,7 @@ class Attack(object):
             trained_shi = None
             history = None
 
-            # Model creation and training
+            # Shadow model creation and training
             if (target_model == 'NN'):
                 shadow_model = model_creation(shadow_params['hidden_layers'], shadow_params['hidden_units'], shadow_params['act_funct'], shadow_params['learning_rate'], shadow_params['optimizer'], self.n_classes)
 
@@ -170,7 +172,40 @@ class Attack(object):
 
         return self.attack_model
 
+class NNAttack(Attack):
+    def __init__(self, attack_model_type, dataset, target, target_train, target_val, class_name, n_classes):
+        super().__init__(attack_model_type, dataset, target, target_train, target_val, class_name, n_classes)
+        self.target_model = 'NN'
 
+    def targetPredict(self, X):
+        return self.target.predict(X)
+
+    def trainAttackModel(self):
+        for i in self.n_classes:
+            # Model creation and training
+                shadow_model = model_creation(shadow_params['hidden_layers'], shadow_params['hidden_units'], shadow_params['act_funct'], shadow_params['learning_rate'], shadow_params['optimizer'], self.n_classes)
+
+                trained_shi, history = model_training(shadow_model, X_train, y_train, X_val, y_val, pool_size= None, batch_size=shadow_params['batch_size'], epochs = shadow_params['epochs'], logdir= None)
+
+                trained_shi = shadow_model.fit(X_train, y_train)
+
+class RFAttack(Attack):
+    def __init__(self, attack_model_type, dataset, target, target_train, target_val, class_name, n_classes):
+        super().__init__(attack_model_type, dataset, target, target_train, target_val, class_name, n_classes)
+        self.target_model = 'RF'
+
+    def targetPredict(self, X):
+        return self.target.predict(X)
+
+    def trainAttackModel(self):
+        for i in self.n_classes:
+            # Model creation and training
+                shadow_model = model_creation(shadow_params['hidden_layers'], shadow_params['hidden_units'], shadow_params['act_funct'], shadow_params['learning_rate'], shadow_params['optimizer'], self.n_classes)
+
+                shadow_model = RandomForestClassifier(bootstrap = shadow_params['bootstrap'], max_depth = shadow_params['max_depth'], min_samples_split = shadow_params['min_samples_split'],
+                min_samples_leaf = shadow_params['min_samples_leaf'], n_estimators = shadow_params['n_estimators'], max_features = shadow_params['max_features'])
+
+                trained_shi = shadow_model.fit(X_train, y_train)
 
 a = Attack('NN', 'adult', 'bb', 'RF', 'x_train', 'x_val', 'class', 2)
 a.runAttack('shadow_data', 100, 10, 'target_params', 'attack_params')
