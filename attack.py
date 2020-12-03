@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from attack_util import prepare_target_data
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -136,6 +136,7 @@ class Attack(ABC):
         print("Shadow models trained")
         return
 
+    @abstractmethod
     def trainAttackModel(self):
         # To Do
         for i in self.n_classes:
