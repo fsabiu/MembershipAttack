@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import sys
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
-from util import make_report, model_creation, model_evaluation, model_training, prepareRFdata, prepareNNdata, path
+from util import make_report, model_creation, model_evaluation, model_training, prepareRFdata, prepareNNdata, path, save_obj
 
 sys.path.insert(0, path)
 
@@ -41,9 +41,9 @@ def train(X_train, y_train, X_val, y_val, X_test, y_test, modelType, params, exp
     if(float(evaluation['weighted avg-f1-score']) > 0.5 and (float(evaluation['accuracy']>= 0.75))):
         make_report(modelType = modelType, model = trained_bb, history = history, params = params, metrics = evaluation, experiment_id = experiment_id)
 
-    return True # relevant metrics
+    return trained_bb # relevant metrics
 
-def prepareBBdata(dataset, label, model):
+def prepareBBdata(dataset, label, model, final = False):
     """
         Returns the dataset for the training
 
@@ -69,9 +69,14 @@ def prepareBBdata(dataset, label, model):
 
     if (model == 'RF'):
         # Data
-        bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', nrows = 5000)
-        bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', nrows = 880)
-        bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv', nrows = 1000)
+        if(not final):
+            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', nrows = 5000)
+            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', nrows = 880)
+            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv', nrows = 1000)
+        else:
+            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv')
+            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv')
+            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv')
 
         prepareData = prepareRFdata
 
@@ -82,7 +87,7 @@ def prepareBBdata(dataset, label, model):
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 def gridSearch(dataset, model, verbose = False):
-    
+
     grid_params = {}
     label = ''
     n_classes = None
@@ -104,7 +109,7 @@ def gridSearch(dataset, model, verbose = False):
                 'batch_size': [32],
                 'epochs': [200]
             }
-        
+
         if (model == 'RF'):
             """grid_params = {
                 'bootstrap': [True, False],
@@ -162,7 +167,7 @@ def gridSearch(dataset, model, verbose = False):
                 'batch_size': [None, 32],
                 'epochs': [200, 300]
             }
-        
+
         if (model == 'RF'):
             grid_params = {
                 'bootstrap': [True, False],
@@ -224,9 +229,63 @@ if __name__ == "__main__":
     if(len(sys.argv) != 3):
         print('Usage: ' + sys.argv[0] + ' dataset_name model')
         exit(1)
-    if (sys.argv[1] not in ['adult', 'mobility', 'texas', 'texas_red']):
+    dataset = sys.argv[1]
+    model = sys.argv[2]
+
+
+    if (dataset not in ['adult', 'mobility', 'texas', 'texas_red', 'texas_best']):
         print("Unknown dataset")
         exit(1)
-    
+
+
+    if(dataset.endswith('best')):
+        experiment_name = ' '.join([dataset, model])
+
+        params = None
+        n_classes = None
+
+        if(dataset == 'texas_best' && model == 'RF'):
+            n_classes = 100
+            params = {
+                'bootstrap': False,
+                'max_depth': 90,
+                'min_samples_split': 10,
+                'min_samples_leaf': 5,
+                'n_estimators': 100,
+                'max_features': 0.6
+            }
+
+        if(dataset == 'adult_best' && model == 'RF'):
+            pass
+
+        if(dataset == 'adult_best' && model == 'NN'):
+            pass
+
+        if(dataset == 'mobility_best' && model == 'RF'):
+            pass
+
+        if(dataset == 'mobility_best' && model == 'NN'):
+            pass
+
+        # Setting MLFlow
+        mlflow.set_experiment(experiment_name = experiment_name)
+        exp = mlflow.get_experiment_by_name(experiment_name)
+
+        # Preparing full data
+        X_train, y_train, X_val, y_val, X_test, y_test = prepareBBdata(dataset, label, model, final = True)
+
+        # Training with full data
+        model = train(X_train, y_train, X_val, y_val, X_test, y_test, model, params, exp.experiment_id, n_classes)
+
+        folder = 'data/' + dataset + '/target/'
+        if(model == 'RF'):
+            save_obj(model, folder + 'RF_model')
+
+        if(model == 'NN'):
+            model.save(folder + 'NN_model.h5')
+
+        print("Best model saved in " + folder)
+        return
     # else
-    gridSearch(sys.argv[1], sys.argv[2])
+    else:
+        gridSearch(dataset, model)
