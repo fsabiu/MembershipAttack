@@ -11,8 +11,8 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
-path = '/mnt/dati/fsabiu/Code2'
-#path = 'D:/Drive/Thesis/Code2'
+#path = '/mnt/dati/fsabiu/Code2'
+path = 'D:/Drive/Thesis/Code2'
 sys.path.insert(0, path)
 
 def encode_dataset(df, class_name):
@@ -34,7 +34,7 @@ def encode_dataset(df, class_name):
     return df, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map
 
 def encode_Dask_dataset(data, class_name, dtypes, excluded_cols):
-    
+
     cols_map = {}
     unique_values = {}
     categoric_colnames = []
@@ -63,7 +63,7 @@ def encode_Dask_dataset(data, class_name, dtypes, excluded_cols):
                         cols_map[col][col + '-' + str(possible_value)].append(1)
                     else:
                         cols_map[col][col + '-' + str(possible_value)].append(0)
-        
+
         else: # If numeric column
             encoded_data[col] = data[col]
 
@@ -78,7 +78,7 @@ def encode_Dask_dataset(data, class_name, dtypes, excluded_cols):
 def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_cols):
     rows = 0
     chunk_size = 10000
-    
+
     for index, data in enumerate(pd.read_csv('data/' + dataset + '/' + dataset +'.csv', dtype = dtypes, chunksize=chunk_size),start=1):
         rows += chunk_size
         print("Chunk " + str(index) + ": " + str(rows) + " rows")
@@ -97,7 +97,7 @@ def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_co
                     categoric_colnames.append(col + '-' + str(value))
 
                 cols_map[col] = columns
-                
+
                 for value in data[col]:
                     for possible_value in unique_values[col]:
                         if (value == possible_value):
@@ -106,7 +106,7 @@ def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_co
                             cols_map[col][col + '-' + str(possible_value)].append(0)
             else: # if numeric column
                 encoded_data[col] = data[col]
-        
+
         for i, col in enumerate(cols_map.keys()): # original column
             print("Appending columns generated from " + col + " - (" + str(i+1) + "/" + str(len(cols_map.keys())) + ")")
             for new_col in cols_map[col].keys():
@@ -117,7 +117,7 @@ def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_co
         print("Writing data...")
         data.to_csv('data/' + dataset + '/splitted/' + dataset + str(index) + '.csv')
         encoded_data.to_csv('data/' + dataset + '/encoded/' + dataset + str(index) + '.csv')
-        
+
     return True
 
 def get_features_map(feature_names, real_feature_names):
@@ -142,7 +142,7 @@ def get_numeric_columns(df):
     # Returns a list of numeric columns of the dataframe df
 
     # Parameters:
-    #    df (Pandas dataframe): The dataframe from which extract the columns 
+    #    df (Pandas dataframe): The dataframe from which extract the columns
 
     # Returns:
     #    A list of columns names (strings) corresponding to numeric columns
@@ -158,7 +158,7 @@ def get_unique_df_values(dataset, dtypes):
     # Parameters:
     #    df (Pandas dataframe): The dataframe from which extract the columns unique values
     #   dtypes (dictionary): Dictionary of column types
-    
+
     # Returns:
     #    A dictionary of {columns -> unique values}
 
@@ -174,7 +174,7 @@ def get_unique_df_values(dataset, dtypes):
             print("Saving values for column " + col + " - (" + str(i+1) + "/" + str(len(data.columns)) + ")")
             # Unique values
             unique_values[col] = data[col].unique()
-    
+
     return unique_values
 
 def get_real_feature_names(rdf, numeric_columns, class_name):
@@ -194,7 +194,7 @@ def make_report(modelType, model, history, params, metrics, experiment_id):
 
     # Starting MLFlow run
     mlflow.start_run(run_name=str(params), experiment_id= experiment_id)
-    
+
     print("Uri: " + str(mlflow.get_artifact_uri()))
 
     # Logging model parameters
@@ -239,21 +239,21 @@ def map_columns(data, class_name):
             # Mapping values
             #for el in data[col].compute(): for dask dataframes
             for el in data[col]:
-                if el not in mapDict.keys():   # If mapping is not defined  
+                if el not in mapDict.keys():   # If mapping is not defined
                     # Define mapping
                     mapDict[el] = len(mapDict)
-                
-                # Map element    
+
+                # Map element
                 append(mapDict[el])
 
-            # Appending mapped columns to dictionary   
+            # Appending mapped columns to dictionary
             newcols[col] = new_column
 
     print("Number of columns: " + str(len(newcols)))
 
     for i, col in enumerate(newcols.keys()):
         print("Adding column: " + col + " ... (" + str(i+1) + "/" + str(len(newcols)) + ")")
-        data[col] = pd.Series(newcols[col])    
+        data[col] = pd.Series(newcols[col])
 
     return data
 
@@ -292,7 +292,7 @@ def model_evaluation(modelType, model, X_val, y_val, X_test, y_test):
 
     metrics['accuracy'] = accuracy_score(y_val, y_val_pred)
     metrics['test_accuracy'] = accuracy_score(y_test, y_test_pred)
-    
+
     report = classification_report(y_val, y_val_pred, output_dict=True)
 
     # Adding precision, recall, f1 and support for each class + overall <accuracy, macro avg, weighted avg>
@@ -302,7 +302,7 @@ def model_evaluation(modelType, model, X_val, y_val, X_test, y_test):
                 metrics['-'.join([str(class_name), metric])] = report[class_name][metric]
         else:
             metrics[class_name] = report[class_name]
-    
+
     return metrics
 
 def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size, epochs, logdir):
@@ -310,7 +310,7 @@ def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size,
     """earlystop_callback = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss', mode = "min", min_delta = 0.001, patience=10, restore_best_weights=True)"""
 
-    history = model.fit(X_train, y_train, 
+    history = model.fit(X_train, y_train,
         batch_size = batch_size,
         epochs = epochs,
         validation_data = (X_val, y_val),
@@ -359,26 +359,26 @@ def prepare_dataset(dataset, explainer):
 
         # Removing duplicates
         data = data.drop_duplicates()
-        
+
 
     if (dataset== 'mobility' and explainer == 'lime'):
         data = pd.read_csv('data/' + dataset + '/' + dataset + '.csv', skipinitialspace=True, na_values='?', keep_default_na=True)
         class_name = 'class'
 
-        # Removing columns        
+        # Removing columns
         columns2remove = ['uid', 'wait']
         data.drop(columns2remove, inplace=True, axis=1)
-        
+
         # Dropping duplicates and missing values
         data = data.drop_duplicates().dropna()
-        
+
 
     if (dataset=='texas' and explainer == 'lime'):
         # Reading and processing files - done in file
         class_name = 'PRINC_SURG_PROC_CODE'
         years = ['2006', '2007', '2008', '2009']
         dfs = []
-        
+
         """
         for year in years:
             data = pd.read_csv('data/' + dataset + '/hospital_texas_' + year + '_clean.csv')
@@ -396,19 +396,19 @@ def prepare_dataset(dataset, explainer):
         # Reading - done in file
         dtypes = load_obj('data/texas' + '/dtypes')
         data = pd.read_csv('data/' + dataset + '/' + dataset +'.csv', dtype = dtypes)
-        
+
         types = dict()
         for col in data.columns:
             if(col in {'BLOOD_ADM_AMOUNT', 'PRIVATE_AMOUNT', 'SEMI_PRIVATE_AMOUNT', 'WARD_AMOUNT', 'ICU_AMOUNT', 'CCU_AMOUNT', 'OTHER_AMOUNT', 'PHARM_AMOUNT', 'MEDSURG_AMOUNT', 'DME_AMOUNT', 'USED_DME_AMOUNT', 'PT_AMOUNT', 'OT_AMOUNT', 'SPEECH_AMOUNT', 'IT_AMOUNT', 'BLOOD_AMOUNT', 'BLOOD_ADMIN_AMOUNT', 'OR_AMOUNT', 'LITH_AMOUNT', 'CARD_AMOUNT', 'ANES_AMOUNT', 'LAB_AMOUNT', 'RAD_AMOUNT', 'MRI_AMOUNT', 'OP_AMOUNT', 'ER_AMOUNT', 'AMBULANCE_AMOUNT', 'PRO_FEE_AMOUNT', 'ORGAN_AMOUNT', 'ESRD_AMOUNT', 'CLINIC_AMOUNT', 'TOTAL_CHARGES', 'TOTAL_NON_COV_CHARGES', 'TOTAL_CHARGES_ACCOMM', 'TOTAL_NON_COV_CHARGES_ACCOMM', 'TOTAL_CHARGES_ANCIL', 'TOTAL_NON_COV_CHARGES_ANCIL',}):
                 types[col] = 'float32'
             else:
                 types[col] = 'object'
-        
+
         data.astype(types)
 
         """
         data = map_columns(data, class_name)
-        
+
         # Writing dataset
         print("Writing dataframe")
         data.to_csv('data/' + dataset + '/' + dataset +'_mapped.csv', index=False)
@@ -417,9 +417,9 @@ def prepare_dataset(dataset, explainer):
     if (dataset == 'texas_red' and explainer == 'lime'):
         class_name = 'PRINC_SURG_PROC_CODE'
         dtypes = load_obj('data/texas' + '/dtypes')
-        
-        # Reading primary external causes of injury, 
-        data = pd.read_csv('data/' + 'texas' + '/' + 'texas' +'.csv', 
+
+        # Reading primary external causes of injury,
+        data = pd.read_csv('data/' + 'texas' + '/' + 'texas' +'.csv',
         usecols = ['E_CODE_1', 'ADMITTING_DIAGNOSIS', 'SEX_CODE', 'RACE' ,'PAT_AGE', 'LENGTH_OF_STAY','PRINC_SURG_PROC_CODE'],
         dtype=dtypes)
 
@@ -479,7 +479,7 @@ def split(dataset, y):
 
     # 85% Training Black-Box, 15% Validation Black-Box
     bb_train, bb_val = train_test_split(bb, test_size = 0.15, random_state = 0, stratify = bb[y])
-    
+
     # 85% Training Shadow models, 15% Validation Shadow models
     sh_train, sh_val = train_test_split(att, test_size = 0.15, random_state = 0, stratify = att[y])
 
