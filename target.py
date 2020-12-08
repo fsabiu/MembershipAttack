@@ -8,6 +8,7 @@ import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import sys
+import tensorflow as tf
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from util import make_report, model_creation, model_evaluation, model_training, prepareRFdata, prepareNNdata, path, save_obj
 
@@ -18,6 +19,7 @@ def train(X_train, y_train, X_val, y_val, X_test, y_test, modelType, params, exp
     trained_bb = None
     history = None
 
+    print("Training size: " + str(len(X_train)))
     # Training
     if (modelType == 'NN'):
         # Architecture
@@ -230,7 +232,7 @@ if __name__ == "__main__":
         print('Usage: ' + sys.argv[0] + ' dataset_name model')
         exit(1)
     dataset = sys.argv[1]
-    model = sys.argv[2]
+    model_type = sys.argv[2]
 
 
     if (dataset not in ['adult', 'mobility', 'texas', 'texas_red', 'texas_best']):
@@ -238,33 +240,39 @@ if __name__ == "__main__":
         exit(1)
 
 
-    if(dataset.endswith('best')):
-        experiment_name = ' '.join([dataset, model])
+    if(dataset.endswith('best')): # Training best model
+        experiment_name = ' '.join([dataset, model_type])
 
         params = None
         n_classes = None
+        label = None
 
-        if(dataset == 'texas_best' && model == 'RF'):
+        if (dataset == 'texas_best'):
             n_classes = 100
-            params = {
+            label = 'PRINC_SURG_PROC_CODE'
+
+            if (model_type == 'RF'):
+                params = {
                 'bootstrap': False,
                 'max_depth': 90,
                 'min_samples_split': 10,
                 'min_samples_leaf': 5,
                 'n_estimators': 100,
                 'max_features': 0.6
-            }
+                }
+            if(model_type == 'NN'):
+                pass
 
-        if(dataset == 'adult_best' && model == 'RF'):
+        if(dataset == 'adult_best' and model_type == 'RF'):
             pass
 
-        if(dataset == 'adult_best' && model == 'NN'):
+        if(dataset == 'adult_best' and model_type == 'NN'):
             pass
 
-        if(dataset == 'mobility_best' && model == 'RF'):
+        if(dataset == 'mobility_best' and model_type == 'RF'):
             pass
 
-        if(dataset == 'mobility_best' && model == 'NN'):
+        if(dataset == 'mobility_best' and model_type == 'NN'):
             pass
 
         # Setting MLFlow
@@ -272,20 +280,22 @@ if __name__ == "__main__":
         exp = mlflow.get_experiment_by_name(experiment_name)
 
         # Preparing full data
-        X_train, y_train, X_val, y_val, X_test, y_test = prepareBBdata(dataset, label, model, final = True)
+        print("Preparing data")
+        X_train, y_train, X_val, y_val, X_test, y_test = prepareBBdata(dataset.replace('_best', ''), label, model_type, final = True)
 
         # Training with full data
-        model = train(X_train, y_train, X_val, y_val, X_test, y_test, model, params, exp.experiment_id, n_classes)
+        print("Training model")
+        model = train(X_train, y_train, X_val, y_val, X_test, y_test, model_type, params, exp.experiment_id, n_classes)
 
-        folder = 'data/' + dataset + '/target/'
-        if(model == 'RF'):
+        folder = 'data/' + dataset.replace('_best', '') + '/target/'
+        if(model_type == 'RF'):
             save_obj(model, folder + 'RF_model')
 
-        if(model == 'NN'):
+        if(model_type == 'NN'):
             model.save(folder + 'NN_model.h5')
 
         print("Best model saved in " + folder)
-        return
+
     # else
     else:
-        gridSearch(dataset, model)
+        gridSearch(dataset, model_type)
