@@ -40,7 +40,7 @@ def train(X_train, y_train, X_val, y_val, X_test, y_test, modelType, params, exp
     evaluation = model_evaluation(modelType = modelType, model = trained_bb, X_val = X_val, y_val = y_val, X_test = X_test, y_test = y_test)
 
     # If in top 50 write on MLFlow
-    if(float(evaluation['weighted avg-f1-score']) > 0.5 and (float(evaluation['accuracy']>= 0.75))):
+    if(float(evaluation['weighted avg-f1-score']) > 0.5 and (float(evaluation['accuracy'] >= 0.75))):
         make_report(modelType = modelType, model = trained_bb, history = history, params = params, metrics = evaluation, experiment_id = experiment_id)
 
     return trained_bb # relevant metrics
@@ -113,21 +113,14 @@ def gridSearch(dataset, model, verbose = False):
             }
 
         if (model == 'RF'):
-            """grid_params = {
+            grid_params = {
                 'bootstrap': [True, False],
                 'max_depth': [int(x) for x in np.linspace(start = 10, stop = 200, num = 20)] + [None],
                 'min_samples_split': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
                 'min_samples_leaf': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
-                'n_estimators': [int(x) for x in np.linspace(start = 100, stop = 2000, num = 20)],
-                'max_features': ['auot', 'sqrt', 0.2, 0.4, 0.6]
-            }"""
-            grid_params = {
-                'bootstrap': [True],
-                'max_depth': [10],
-                'min_samples_split': [4],
-                'min_samples_leaf': [4],
-                'n_estimators': [5],
-                'max_features': ['sqrt']
+                'n_estimators': [int(x) for x in np.linspace(start = 100, stop = 2000, num = 10)],
+                'max_features': ['auto', 'sqrt', 0.2, 0.4, 0.6],
+                'criterion' : ['gini', 'entropy']
             }
 
     if (dataset == 'mobility'):
@@ -147,12 +140,13 @@ def gridSearch(dataset, model, verbose = False):
 
         if (model == 'RF'):
             grid_params = {
-                'bootstrap': [True],
-                'max_depth': [10],
-                'min_samples_split': [4],
-                'min_samples_leaf': [4],
-                'n_estimators': [5],
-                'max_features': ['sqrt']
+                'bootstrap': [True, False],
+                'max_depth': [int(x) for x in np.linspace(start = 10, stop = 200, num = 20)] + [None],
+                'min_samples_split': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
+                'min_samples_leaf': [int(x) for x in np.linspace(start = 5, stop = 20, num = 4)],
+                'n_estimators': [int(x) for x in np.linspace(start = 100, stop = 2000, num = 10)],
+                'max_features': ['auto', 'sqrt', 0.2, 0.4, 0.6],
+                'criterion' : ['gini', 'entropy']
             }
 
 
@@ -196,7 +190,7 @@ def gridSearch(dataset, model, verbose = False):
     print("Running grid search with ",len(params_list)," models")
 
     # Number of processes
-    par_degree = 12
+    par_degree = 6
 
     # Creating one parameters list for each process
     params_lists = [list(a) for a in np.array_split(params_list, par_degree)]
@@ -289,10 +283,10 @@ if __name__ == "__main__":
 
         folder = 'data/' + dataset.replace('_best', '') + '/target/'
         if(model_type == 'RF'):
-            save_obj(model, folder + 'RF_model')
+            save_obj(model, folder + 'RF/RF_model')
 
         if(model_type == 'NN'):
-            model.save(folder + 'NN_model.h5')
+            model.save(folder + 'NN/NN_model.h5')
 
         print("Best model saved in " + folder)
 
