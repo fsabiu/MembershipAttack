@@ -11,8 +11,8 @@ sys.path.insert(0, path)
 def preprocess(dataset, explainer):
 
     # Dataset preparation
-    data =  class_name = None 
-    
+    data =  class_name = None
+
     encoded_data = None
 
     if (dataset == 'texas'): #
@@ -39,11 +39,14 @@ def preprocess(dataset, explainer):
     else:
         data, class_name = prepare_dataset(dataset, explainer)
 
+        data.to_csv("prepared_adult.csv")
         # Mapping
         mapped_data = map_columns(data, class_name)
+        mapped_data.to_csv("mapped_adult.csv")
 
         # Encoding
         encoded_data, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map = encode_dataset(data, class_name)
+        encoded_data.to_csv("encoded_adult.csv")
 
     # Splitting both datasets
     bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)

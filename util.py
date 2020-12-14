@@ -231,7 +231,11 @@ def map_columns(data, class_name):
         print("Mapping column: " + col + " ... (" + str(i+1) + "/" + str(len(colnames)) + ")")
         if(col == class_name or data[col].dtype == 'object'): #PRINC_SURG_PROC_CODE must be int64
             # Mapping dictionary
-            mapDict = {'NaN': 0, 'nan': 0, 'X': 1, 'A':2}
+            mapDict = None
+            if(class_name == 'PRINC_SURG_PROC_CODE'):
+                mapDict = {'NaN': 0, 'nan': 0, 'X': 1, 'A':2}
+            else:
+                mapDict = {}
 
             new_column = []
             append = new_column.append
@@ -320,7 +324,7 @@ def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size,
         ]
     )
 
-    if False:
+    if logdir is not None:
         model.save_weights(logdir+"final_model", save_format="h5")
 
     model.summary()
@@ -423,6 +427,9 @@ def prepare_dataset(dataset, explainer):
         usecols = ['E_CODE_1', 'ADMITTING_DIAGNOSIS', 'SEX_CODE', 'RACE' ,'PAT_AGE', 'LENGTH_OF_STAY','PRINC_SURG_PROC_CODE'],
         dtype=dtypes)
 
+    # Shuffle data
+    data = data.sample(frac=1).reset_index(drop=True)
+
     return data, class_name
 
 def prepareNNdata(dataset, label):
@@ -469,8 +476,6 @@ def split(dataset, y):
     #    A dictionary of {columns -> unique values}
 
     """
-    # Shuffle data
-    dataset = dataset.sample(frac=1).reset_index(drop=True)
 
     ochenta, veinte = train_test_split(dataset, test_size = 0.2, random_state = 0, stratify = dataset[y])
 
