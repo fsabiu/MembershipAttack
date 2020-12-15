@@ -32,6 +32,7 @@ class Attack(ABC):
         # Attack properties
         self.attack_model_type = attack_model_type
         self.attack_models = [None] * self.n_classes
+        self.attack_histories = [None] * self.n_classes
         self.class_indices_train = {}
         self.class_indices_val = {}
         self.X_train_att = None
@@ -198,7 +199,7 @@ class Attack(ABC):
 
             p_val = np.random.permutation(len(self.class_indices_val[i]))
 
-            self.attack_models[i], history = model_training(self.attack_models[i],
+            self.attack_models[i], self.attack_histories[i] = model_training(self.attack_models[i],
                 self.X_train_att[self.class_indices_train[i]][p_train],
                 self.y_train_att[self.class_indices_train[i]][p_train],
                 self.X_val_att[self.class_indices_val[i]][p_val],
@@ -210,7 +211,8 @@ class Attack(ABC):
             # i = 99
             a['y_train'] = self.y_train_att[self.class_indices_train[i]]
             a['y_val'] = self.y_val_att[self.class_indices_val[i]]
-        return a
+
+        return self.attack_models, self.attack_histories
 
     def runAttack(self, shadow_data, shadow_train_size, shadow_val_size, n_shadow_models, shadow_params, attack_params):
         # Checking sizes
@@ -246,12 +248,10 @@ class Attack(ABC):
         print(frequencies)
 
         print("Training attack model(s)")
-        a = self.trainAttackModel()
+        res = self.trainAttackModel()
         print("Attack model(s) trained")
 
-        print("Evaluation...")
-
-        return a
+        return res
 
 class NNAttack(Attack):
     def __init__(self, attack_model_type, dataset, target, target_train, target_val, class_name, n_classes):
