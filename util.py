@@ -11,8 +11,8 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
-#path = '/mnt/dati/fsabiu/Code2'
-path = 'D:/Drive/Thesis/Code2'
+path = '/mnt/dati/fsabiu/Code2'
+#path = 'D:/Drive/Thesis/Code2'
 sys.path.insert(0, path)
 
 def encode_dataset(df, class_name):
@@ -261,10 +261,10 @@ def map_columns(data, class_name):
 
     return data
 
-def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, output_units, size=None):
+def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, output_units, input_size=None):
     model = tf.keras.models.Sequential()
-    if size is not None:
-        model.add(tf.keras.Input(shape=(size,)))
+    if input_size is not None:
+        model.add(tf.keras.Input(shape=(input_size,)))
 
     for i in range(hidden_layers):
         model.add(Dense(hidden_units, activation = act_function))
