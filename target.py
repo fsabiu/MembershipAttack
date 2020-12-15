@@ -229,7 +229,7 @@ if __name__ == "__main__":
     model_type = sys.argv[2]
 
 
-    if (dataset not in ['adult', 'mobility', 'texas', 'texas_red', 'texas_best']):
+    if (dataset not in ['adult', 'mobility', 'texas', 'adult_best', 'texas_red', 'texas_best']):
         print("Unknown dataset")
         exit(1)
 
@@ -258,6 +258,17 @@ if __name__ == "__main__":
                 pass
 
         if(dataset == 'adult_best' and model_type == 'RF'):
+            n_classes = 2
+            label = 'class'
+            params = {
+            'bootstrap': False,
+            'criterion': 'entropy',
+            'max_depth': 40,
+            'min_samples_split': 5,
+            'min_samples_leaf': 5,
+            'n_estimators': 100,
+            'max_features': 'sqrt'
+            }
             pass
 
         if(dataset == 'adult_best' and model_type == 'NN'):
@@ -281,12 +292,12 @@ if __name__ == "__main__":
         print("Training model")
         model = train(X_train, y_train, X_val, y_val, X_test, y_test, model_type, params, exp.experiment_id, n_classes)
 
-        folder = 'data/' + dataset.replace('_best', '') + '/target/'
+        folder = 'data/' + dataset.replace('_best', '') + '/target/' + model_type + '/'
         if(model_type == 'RF'):
-            save_obj(model, folder + 'RF/RF_model')
+            save_obj(model, folder + '/RF_model')
 
         if(model_type == 'NN'):
-            model.save(folder + 'NN/NN_model.h5')
+            model.save(folder + '/NN_model.h5')
 
         print("Best model saved in " + folder)
 
