@@ -44,6 +44,15 @@ class Attack(ABC):
     def targetPredict(self, X):
         pass
 
+    def getAttackModel(self):
+        return self.attack_models
+
+    def getAttackTrain(self):
+        return self.X_train_att, self.y_train_att
+
+    def getClassIndices(self):
+        return self.class_indices_train, self.class_indices_val
+
     def getTarget(self):
         return self.target
 
@@ -158,8 +167,16 @@ class Attack(ABC):
         #assert sum([len(idces) for idces in self.class_indices_train]) == len(self.y_true_attack)
         #assert sum([len(idces) for idces in self.class_indices_val]) == len(self.y_val_true)
 
-        for i in range(self.n_classes):
-            self.attack_models[i] = model_creation(self.attack_params['hidden_layers'], self.attack_params['hidden_units'], self.attack_params['act_funct'], self.attack_params['learning_rate'], self.attack_params['optimizer'], self.n_classes)
+        #for i in range(self.n_classes):
+        for i in range(2):
+            self.attack_models[i] = model_creation(
+            self.attack_params['hidden_layers'],
+            self.attack_params['hidden_units'],
+            self.attack_params['act_funct'],
+            self.attack_params['learning_rate'],
+            self.attack_params['optimizer'],
+            1,
+            self.n_classes)
 
             print("Training attack for class " + str(self.target_labels[i]))
             a = {}
@@ -170,19 +187,29 @@ class Attack(ABC):
 
             print('i = ' + str(i))
             print(len(a['X-tr']))
-            print(len(a['y-tr']))
             print(len(a['X-val']))
-            print(len(a['y-val']))
-            trained_shi, history = model_training(self.attack_models[i],
-                self.X_train_att[self.class_indices[i]],
-                self.y_train_att[self.class_indices[i]],
-                self.X_val_att[self.class_indices_val[i]],
-                self.y_val_att[self.class_indices_val[i]],
+
+            print("Testing attack.....")
+            (unique, counts) = np.unique(self.y_train_att[self.class_indices_train[i]], return_counts=True)
+            frequencies = np.asarray((unique, counts)).T
+            print(frequencies)
+
+            p_train = np.random.permutation(len(self.class_indices_train[i]))
+
+            p_val = np.random.permutation(len(self.class_indices_val[i]))
+
+            self.attack_models[i], history = model_training(self.attack_models[i],
+                self.X_train_att[self.class_indices_train[i]][p_train],
+                self.y_train_att[self.class_indices_train[i]][p_train],
+                self.X_val_att[self.class_indices_val[i]][p_val],
+                self.y_val_att[self.class_indices_val[i]][p_val],
                 pool_size = None,
                 batch_size = self.attack_params['batch_size'],
                 epochs = self.attack_params['epochs'],
                 logdir = None)
-
+            # i = 99
+            a['y_train'] = self.y_train_att[self.class_indices_train[i]]
+            a['y_val'] = self.y_val_att[self.class_indices_val[i]]
         return a
 
     def runAttack(self, shadow_data, shadow_train_size, shadow_val_size, n_shadow_models, shadow_params, attack_params):
@@ -213,6 +240,11 @@ class Attack(ABC):
         self.trainShadowModels()
         print("Shadow models trained")
 
+        print("Testing.....")
+        (unique, counts) = np.unique(self.y_train_att, return_counts=True)
+        frequencies = np.asarray((unique, counts)).T
+        print(frequencies)
+
         print("Training attack model(s)")
         a = self.trainAttackModel()
         print("Attack model(s) trained")
@@ -242,7 +274,7 @@ class RFAttack(Attack):
 # folder = 'data/' + 'texas/'
 #
 # # Black box
-# black_box = load_obj(folder + 'target/RF_model')
+# black_box = load_obj(folder + 'target/RF/RF_model')
 #
 # # Train and val
 # train_data = pd.read_csv(folder + 'baseline_split/bb_train_mapped.csv', nrows = 10000)
