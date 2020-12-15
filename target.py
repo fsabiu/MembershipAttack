@@ -275,6 +275,17 @@ if __name__ == "__main__":
             pass
 
         if(dataset == 'mobility_best' and model_type == 'RF'):
+            n_classes = 4
+            label = 'class'
+            params = {
+            'bootstrap': True,
+            'criterion': 'entropy',
+            'max_depth': 160,
+            'min_samples_split': 20,
+            'min_samples_leaf': 5,
+            'n_estimators': 100,
+            'max_features': 'auto'
+            }
             pass
 
         if(dataset == 'mobility_best' and model_type == 'NN'):
