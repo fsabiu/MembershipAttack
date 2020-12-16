@@ -38,12 +38,14 @@ def preprocess(dataset, explainer):
         return True
     else:
         data, class_name = prepare_dataset(dataset, explainer)
-        
+
         # Mapping
         mapped_data = map_columns(data, class_name)
+        mapped_data.to_csv('data/' + dataset + '/' + dataset + '_mapped.csv')
 
         # Encoding
         encoded_data, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map = encode_dataset(data, class_name)
+        encoded_data.to_csv('data/' + dataset + '/' + dataset + '_encoded.csv')
 
     # Splitting both datasets
     bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)
