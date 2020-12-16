@@ -11,8 +11,8 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
-path = '/mnt/dati/fsabiu/Code2'
-#path = 'D:/Drive/Thesis/Code2'
+#path = '/mnt/dati/fsabiu/Code2'
+path = 'D:/Drive/Thesis/Code2'
 sys.path.insert(0, path)
 
 def encode_dataset(df, class_name):
