@@ -58,7 +58,11 @@ class BaseDiscretizer():
             self.mins = self.data_stats.get("mins")
             self.maxs = self.data_stats.get("maxs")
 
+        print("Feature names")
+        print(feature_names)
+        print(len(feature_names))
         for feature, qts in zip(self.to_discretize, bins):
+            print(feature)
             n_bins = qts.shape[0]  # Actually number of borders (= #bins-1)
             boundaries = np.min(data[:, feature]), np.max(data[:, feature])
             name = feature_names[feature]

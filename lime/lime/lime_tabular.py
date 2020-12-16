@@ -15,11 +15,11 @@ from sklearn.utils import check_random_state
 from pyDOE2 import lhs
 from scipy.stats.distributions import norm
 
-from lime.discretize import QuartileDiscretizer
-from lime.discretize import DecileDiscretizer
-from lime.discretize import EntropyDiscretizer
-from lime.discretize import BaseDiscretizer
-from lime.discretize import StatsDiscretizer
+from lime.lime.discretize import QuartileDiscretizer
+from lime.lime.discretize import DecileDiscretizer
+from lime.lime.discretize import EntropyDiscretizer
+from lime.lime.discretize import BaseDiscretizer
+from lime.lime.discretize import StatsDiscretizer
 from . import explanation
 from . import lime_base
 
@@ -344,6 +344,8 @@ class LimeTabularExplainer(object):
             # Preventative code: if sparse, convert to csr format if not in csr format already
             data_row = data_row.tocsr()
         data, inverse = self.__data_inverse(data_row, num_samples, sampling_method)
+        return data, inverse
+
         if sp.sparse.issparse(data):
             # Note in sparse case we don't subtract mean since data would become dense
             scaled_data = data.multiply(self.scaler.scale_)
