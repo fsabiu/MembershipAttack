@@ -229,7 +229,7 @@ if __name__ == "__main__":
     model_type = sys.argv[2]
 
 
-    if (dataset not in ['adult', 'mobility', 'texas', 'adult_best', 'texas_red', 'texas_best']):
+    if (dataset not in ['adult', 'mobility', 'texas', 'adult_best', 'mobility_best', 'texas_red', 'texas_best']):
         print("Unknown dataset")
         exit(1)
 
