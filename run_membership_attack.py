@@ -2,6 +2,7 @@ from attack import *
 from util import path
 from attack_util import call_attack, writeAttackModels
 
+from lime.lime import lime_tabular
 import sys
 sys.path.insert(0, path)
 
@@ -137,13 +138,12 @@ def texas_attack(model):
 
     return models, histores
 
-
 if __name__ == "__main__":
-"""
-Requires:
-- data/dataset/results/attack_models/
-to exists
-"""
+    """
+    Requires:
+    - data/dataset/results/attack_models/
+    to exists
+    """
     if(len(sys.argv) != 3):
         print('Usage: ' + sys.argv[0] + ' model dataset')
         exit(1)
