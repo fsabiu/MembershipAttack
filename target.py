@@ -248,8 +248,8 @@ if __name__ == "__main__":
             if (model_type == 'RF'):
                 params = {
                 'bootstrap': False,
-                'max_depth': 90,
-                'min_samples_split': 10,
+                'max_depth': 130,
+                'min_samples_split': 5,
                 'min_samples_leaf': 5,
                 'n_estimators': 100,
                 'max_features': 0.6
