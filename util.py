@@ -380,10 +380,11 @@ def prepare_dataset(dataset, explainer):
     if (dataset=='texas' and explainer == 'lime'):
         # Reading and processing files - done in file
         class_name = 'PRINC_SURG_PROC_CODE'
+        """
         years = ['2006', '2007', '2008', '2009']
         dfs = []
 
-        """
+
         for year in years:
             data = pd.read_csv('data/' + dataset + '/hospital_texas_' + year + '_clean.csv')
             data.drop(['Unnamed: 0'], inplace=True, axis=1)
@@ -403,20 +404,20 @@ def prepare_dataset(dataset, explainer):
 
         types = dict()
         for col in data.columns:
-            if(col in {'BLOOD_ADM_AMOUNT', 'PRIVATE_AMOUNT', 'SEMI_PRIVATE_AMOUNT', 'WARD_AMOUNT', 'ICU_AMOUNT', 'CCU_AMOUNT', 'OTHER_AMOUNT', 'PHARM_AMOUNT', 'MEDSURG_AMOUNT', 'DME_AMOUNT', 'USED_DME_AMOUNT', 'PT_AMOUNT', 'OT_AMOUNT', 'SPEECH_AMOUNT', 'IT_AMOUNT', 'BLOOD_AMOUNT', 'BLOOD_ADMIN_AMOUNT', 'OR_AMOUNT', 'LITH_AMOUNT', 'CARD_AMOUNT', 'ANES_AMOUNT', 'LAB_AMOUNT', 'RAD_AMOUNT', 'MRI_AMOUNT', 'OP_AMOUNT', 'ER_AMOUNT', 'AMBULANCE_AMOUNT', 'PRO_FEE_AMOUNT', 'ORGAN_AMOUNT', 'ESRD_AMOUNT', 'CLINIC_AMOUNT', 'TOTAL_CHARGES', 'TOTAL_NON_COV_CHARGES', 'TOTAL_CHARGES_ACCOMM', 'TOTAL_NON_COV_CHARGES_ACCOMM', 'TOTAL_CHARGES_ANCIL', 'TOTAL_NON_COV_CHARGES_ANCIL',}):
+            if(col in {'BLOOD_ADM_AMOUNT', 'BLOOD_ADM_AMOUNT', 'ICU_AMOUNT', 'PRIVATE_AMOUNT', 'SEMI_PRIVATE_AMOUNT', 'WARD_AMOUNT', 'ICU_AMOUNT', 'CCU_AMOUNT', 'OTHER_AMOUNT', 'PHARM_AMOUNT', 'MEDSURG_AMOUNT', 'DME_AMOUNT', 'USED_DME_AMOUNT', 'PT_AMOUNT', 'OT_AMOUNT', 'SPEECH_AMOUNT', 'IT_AMOUNT', 'BLOOD_AMOUNT', 'BLOOD_ADMIN_AMOUNT', 'OR_AMOUNT', 'LITH_AMOUNT', 'CARD_AMOUNT', 'ANES_AMOUNT', 'LAB_AMOUNT', 'RAD_AMOUNT', 'MRI_AMOUNT', 'OP_AMOUNT', 'ER_AMOUNT', 'AMBULANCE_AMOUNT', 'PRO_FEE_AMOUNT', 'ORGAN_AMOUNT', 'ESRD_AMOUNT', 'CLINIC_AMOUNT', 'TOTAL_CHARGES', 'TOTAL_NON_COV_CHARGES', 'TOTAL_CHARGES_ACCOMM', 'TOTAL_NON_COV_CHARGES_ACCOMM', 'TOTAL_CHARGES_ANCIL', 'TOTAL_NON_COV_CHARGES_ANCIL',}):
                 types[col] = 'float32'
             else:
                 types[col] = 'object'
 
         data.astype(types)
 
-        """
+        save_obj(types, 'data/texas' + '/dtypes')
         data = map_columns(data, class_name)
 
         # Writing dataset
         print("Writing dataframe")
         data.to_csv('data/' + dataset + '/' + dataset +'_mapped.csv', index=False)
-        """
+
 
     if (dataset == 'texas_red' and explainer == 'lime'):
         class_name = 'PRINC_SURG_PROC_CODE'
