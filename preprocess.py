@@ -37,11 +37,8 @@ def preprocess(dataset, explainer):
         print("r2E saved")
         test.to_csv('data/' + dataset + '/baseline_split/test_mapped.csv', index=False)
 
-        return True
     else:
         data, class_name = prepare_dataset(dataset, explainer)
-        print("Written")
-        return True
         # Mapping
         mapped_data = map_columns(data, class_name)
         mapped_data.to_csv('data/' + dataset + '/' + dataset + '_mapped.csv')

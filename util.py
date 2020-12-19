@@ -11,8 +11,8 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
-#path = '/mnt/dati/fsabiu/Code2'
-path = 'D:/Drive/Thesis/Code2'
+path = '/mnt/dati/fsabiu/Code2'
+#path = 'D:/Drive/Thesis/Code2'
 sys.path.insert(0, path)
 
 def encode_dataset(df, class_name):
@@ -261,19 +261,19 @@ def map_columns(data, class_name):
 
     return data
 
-def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, output_units, input_size=None):
-    model = tf.keras.models.Sequential()
-    if input_size is not None:
-        model.add(tf.keras.Input(shape=(input_size,)))
+def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, output_units, loss, input_size=None):
 
     for i in range(hidden_layers):
         model.add(Dense(hidden_units, activation = act_function))
     model.add(Dense(output_units, activation = 'softmax'))
 
+    # Getting loss function
+    loss_function = getLossFunction(loss)
+
     model.compile(
-        optimizer=optimizer(learning_rate=learning_rate),
-        loss=tf.keras.losses.BinaryCrossentropy(),
-        metrics=['accuracy'],
+        optimizer = optimizer(learning_rate = learning_rate),
+        loss = loss_function,
+        metrics = ['accuracy'],
     )
 
     return model
@@ -425,7 +425,9 @@ def prepare_dataset(dataset, explainer):
 
         # Reading primary external causes of injury,
         data = pd.read_csv('data/' + 'texas' + '/' + 'texas' +'.csv',
-        usecols = ['E_CODE_1', 'ADMITTING_DIAGNOSIS', 'SEX_CODE', 'RACE' ,'PAT_AGE', 'LENGTH_OF_STAY','PRINC_SURG_PROC_CODE'],
+        usecols = ['E_CODE_1', 'E_CODE_2', 'OTH_ICD9_CODE_1', 'OTH_ICD9_CODE_2',
+        'ADMITTING_DIAGNOSIS', 'SEX_CODE', 'RACE' ,'PAT_AGE', 'LENGTH_OF_STAY',
+        'PRINC_SURG_PROC_CODE'],
         dtype=dtypes)
 
     # Shuffle data

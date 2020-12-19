@@ -171,12 +171,13 @@ class Attack(ABC):
         #for i in range(self.n_classes):
         for i in range(2):
             self.attack_models[i] = model_creation(
-            self.attack_params['hidden_layers'],
-            self.attack_params['hidden_units'],
-            self.attack_params['act_funct'],
-            self.attack_params['learning_rate'],
-            self.attack_params['optimizer'],
-            1,
+            hidden_layers = self.attack_params['hidden_layers'],
+            hidden_units = self.attack_params['hidden_units'],
+            act_function = self.attack_params['act_funct'],
+            learning_rate = self.attack_params['learning_rate'],
+            optimizer = self.attack_params['optimizer'],
+            output_units = 1,
+            loss = attack_params['loss'],
             self.n_classes)
 
             print("Training attack for class " + str(self.target_labels[i]))
