@@ -34,7 +34,8 @@ def adult_attack(model):
         'learning_rate': 1e-2,
         'optimizer': Adam,
         'batch_size': 32,
-        'epochs': 200
+        'epochs': 200,
+        'loss': 'BinaryCrossentropy'
     }
 
     models, histores = call_attack(
