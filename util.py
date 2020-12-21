@@ -137,6 +137,20 @@ def get_features_map(feature_names, real_feature_names):
             j += 1
     return features_map
 
+def getLossFunction(loss_name):
+    loss_function = None
+
+    if(loss_name == 'BinaryCrossentropy'):
+        loss_function = tf.keras.losses.BinaryCrossentropy()
+
+    if(loss_name == 'CategoricalCrossentropy'):
+        loss_function = tf.keras.losses.CategoricalCrossentropy()
+
+    if(loss_name == 'SparseCategoricalCrossentropy'):
+        loss_function = tf.keras.losses.SparseCategoricalCrossentropy()
+
+    return loss_function
+
 def get_numeric_columns(df):
     """
     # Returns a list of numeric columns of the dataframe df
@@ -261,7 +275,11 @@ def map_columns(data, class_name):
 
     return data
 
-def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, output_units, loss, input_size=None):
+def model_creation(hidden_layers, hidden_units, act_function, learning_rate, optimizer, loss, output_units, input_size=None):
+
+    model = tf.keras.models.Sequential()
+    if input_size is not None:
+        model.add(tf.keras.Input(shape=(input_size,)))
 
     for i in range(hidden_layers):
         model.add(Dense(hidden_units, activation = act_function))
@@ -317,12 +335,14 @@ def model_training(model, X_train, y_train, X_val, y_val, pool_size, batch_size,
     history = model.fit(X_train, y_train,
         batch_size = batch_size,
         epochs = epochs,
-        validation_data = (X_val, y_val),
-        callbacks = [
-            #tf.keras.callbacks.TensorBoard(logdir),  # log metrics
-            # earlystop_callback
-        ]
+        validation_data = (X_val, y_val)
     )
+    """
+    callbacks = [
+        #tf.keras.callbacks.TensorBoard(logdir),  # log metrics
+        # earlystop_callback
+    ]
+    """
 
     if logdir is not None:
         model.save_weights(logdir+"final_model", save_format="h5")
@@ -441,6 +461,8 @@ def prepareNNdata(dataset, label):
 
     cols = dataset.columns
     x = np.array(dataset[cols])
+
+    # encode y
 
     return x, y
 

@@ -23,10 +23,24 @@ def train(X_train, y_train, X_val, y_val, X_test, y_test, modelType, params, exp
     # Training
     if (modelType == 'NN'):
         # Architecture
-        bb = model_creation(params['hidden_layers'], params['hidden_units'], params['act_funct'], params['learning_rate'], params['optimizer'], n_classes)
+        bb = model_creation(params['hidden_layers'],
+                            params['hidden_units'],
+                            params['act_funct'],
+                            params['learning_rate'],
+                            params['optimizer'],
+                            params['loss'],
+                            n_classes)
 
         # Training and parameters
-        trained_bb, history = model_training(bb, X_train, y_train, X_val, y_val, pool_size= None, batch_size=params['batch_size'], epochs = params['epochs'], logdir= None)
+        trained_bb, history = model_training(bb,
+                                            X_train,
+                                            y_train,
+                                            X_val,
+                                            y_val,
+                                            pool_size= None,
+                                            batch_size=params['batch_size'],
+                                            epochs = params['epochs'],
+                                            logdir= None)
 
     if (modelType == 'RF'):
         # Architecture and parameters
@@ -39,8 +53,8 @@ def train(X_train, y_train, X_val, y_val, X_test, y_test, modelType, params, exp
     # Evaluation
     evaluation = model_evaluation(modelType = modelType, model = trained_bb, X_val = X_val, y_val = y_val, X_test = X_test, y_test = y_test)
 
-    # If in top 50 write on MLFlow
-    if(float(evaluation['weighted avg-f1-score']) > 0.5 and (float(evaluation['accuracy'] >= 0.75))):
+    # If better than tresholds write on MLFlow
+    if(float(evaluation['weighted avg-f1-score']) > 0.4 and (float(evaluation['accuracy'] >= 0.60))):
         make_report(modelType = modelType, model = trained_bb, history = history, params = params, metrics = evaluation, experiment_id = experiment_id)
 
     return trained_bb # relevant metrics
@@ -135,7 +149,8 @@ def gridSearch(dataset, model, verbose = False):
                 'learning_rate': [1e-6, 1e-5, 5e-4, 1e-4],
                 'optimizer': [SGD, Adam, RMSprop],
                 'batch_size': [None, 16, 32],
-                'epochs': [450]
+                'epochs': [450],
+                'loss': ['BinaryCrossentropy', 'CategoricalCrossentropy', 'SparseCategoricalCrossentropy']
             }
 
         if (model == 'RF'):
