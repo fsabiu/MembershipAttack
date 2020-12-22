@@ -263,11 +263,11 @@ if __name__ == "__main__":
             if (model_type == 'RF'):
                 params = {
                 'bootstrap': False,
-                'max_depth': 130,
+                'max_depth': 150,
                 'min_samples_split': 5,
                 'min_samples_leaf': 5,
-                'n_estimators': 100,
-                'max_features': 0.6
+                'n_estimators': 522,
+                'max_features': 0.4
                 }
             if(model_type == 'NN'):
                 pass
