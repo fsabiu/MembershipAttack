@@ -306,9 +306,17 @@ def model_evaluation(modelType, model, X_val, y_val, X_test, y_test):
     y_test_pred = None
 
     if (modelType == 'NN'):
-        y_test_pred = np.argmax(model.predict(X_test), axis=-1)
-        y_val_pred = np.argmax(model.predict(X_val), axis=-1)
+        y_test_pred = model.predict(X_test)
+        y_val_pred = model.predict(X_val)
         #y_pred = model.predict_classes(X_test)
+
+        idx = np.argmax(y_val_pred, axis=-1)
+        y_val_pred = np.zeros( y_val_pred.shape )
+        y_val_pred[ np.arange(y_val_pred.shape[0]), idx] = 1
+
+        idx = np.argmax(y_test_pred, axis=-1)
+        y_test_pred = np.zeros( y_test_pred.shape )
+        y_test_pred[ np.arange(y_test_pred.shape[0]), idx] = 1
 
     if (modelType == 'RF'):
         y_test_pred = model.predict(X_test)
@@ -460,13 +468,20 @@ def prepare_dataset(dataset, explainer):
     return data, class_name
 
 def prepareNNdata(dataset, label):
-    y = dataset[label].values
+    # Dropping y
     dataset.drop([label], axis=1, inplace = True)
+
+    class_cols = [col for col in dataset if col.startswith(label + '-')]
+
+    # encode y
+    y = dataset[class_cols].values
+
+    dataset.drop(class_cols, axis=1, inplace = True)
 
     cols = dataset.columns
     x = np.array(dataset[cols])
 
-    # encode y
+    print(y)
 
     return x, y
 
