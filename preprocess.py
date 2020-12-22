@@ -4,7 +4,7 @@ import pandas as pd
 import sklearn
 from sklearn.model_selection import train_test_split
 import sys
-from util import encode_dataset, encode_split_dataset, get_unique_df_values, load_obj, map_columns, path, prepare_dataset, save_obj, split
+from util import encode_dataset, encode_Dask_dataset, encode_split_dataset, get_unique_df_values, load_obj, map_columns, path, prepare_dataset, save_obj, split
 
 sys.path.insert(0, path)
 
@@ -12,7 +12,7 @@ def preprocess(dataset, explainer):
 
     # Dataset preparation
     data =  class_name = None
-
+    dtypes = {}
     encoded_data = None
 
     if (dataset == 'texas'): #
@@ -20,7 +20,8 @@ def preprocess(dataset, explainer):
         dtypes = load_obj('data/' + dataset + '/dtypes')
         data = pd.read_csv('data/' + dataset + '/' + dataset +'_mapped.csv', dtype = dtypes)
 
-        data.drop(['RECORD_ID'], axis = 1, inplace = True)
+        columns2remove = ['RECORD_ID', 'PRINC_ICD9_CODE']
+        data.drop(columns2remove, inplace=True, axis=1)
 
         print("Splitting ...")
         bb_train, bb_val, sh_train, sh_val, r2E, test = split(data, class_name)
@@ -44,7 +45,32 @@ def preprocess(dataset, explainer):
         mapped_data.to_csv('data/' + dataset + '/' + dataset + '_mapped.csv')
 
     # Encoding
-    encoded_data, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map = encode_dataset(data, class_name)
+    if(dataset == 'adult'):
+        class_name = 'class'
+        for col in data.columns:
+            if(col in ['capital-gain', 'capital-loss']):
+                dtypes[col] = 'float32'
+            elif(col in ['age', 'hours-per-week']):
+                dtypes[col] = 'int64'
+            else:
+                dtypes[col] = 'object'
+
+    if(dataset == 'mobility'):
+        class_name = 'class'
+        for col in data.columns:
+            if(col in ['max_distance_from_home', 'maximum_distance', 'max_tot', 'distance_straight_line',
+            'sld_avg', 'radius_of_gyration', 'norm_uncorrelated_entropy', 'nlr', 'home_freq_avg',
+            'work_freq_avg', 'hf_tot_df', 'wf_tot_df', 'n_user_home_avg', 'n_user_work_avg', 'home_entropy',
+            'work_entropy']):
+                dtypes[col] = 'float32'
+            elif( col in ['uid', 'wait', 'number_of_visits', 'nv_avg', 'number_of_locations',
+            'raw_home_freq', 'raw_work_freq', 'raw_least_freq', 'n_user_home', 'n_user_work']):
+                dtypes[col] = 'int64'
+            else:
+                dtypes[col] = 'object'
+
+    encoded_data = encode_Dask_dataset(dd.from_pandas(data, npartitions = 1), class_name, dtypes, [])
+    #encoded_data, feature_names, class_values, numeric_columns, rdf, real_feature_names, features_map = encode_dataset(data, class_name)
     encoded_data.to_csv('data/' + dataset + '/' + dataset + '_encoded.csv')
 
     # Splitting both datasets

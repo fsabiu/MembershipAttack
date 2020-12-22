@@ -68,12 +68,15 @@ def encode_Dask_dataset(data, class_name, dtypes, excluded_cols):
             encoded_data[col] = data[col]
 
     for i, col in enumerate(cols_map.keys()): # original column
-        print("Appending columns generated from " + col + " - (" + str(i+1) + "/" + len(cols_map.keys()) + ")")
+        print("Appending columns generated from " + col + " - (" + str(i+1) + "/" + str(len(cols_map.keys())) + ")")
         for new_col in cols_map[col].keys():
             print(new_col + "...")
             encoded_data[new_col] = cols_map[col][new_col]
 
-    return encoded_data.compute()
+    # Re-adding class for splitting
+    encoded_data[class_name] = data[class_name]
+
+    return encoded_data
 
 def encode_split_dataset(dataset, class_name, dtypes, unique_values, excluded_cols):
     rows = 0
@@ -444,6 +447,7 @@ def prepare_dataset(dataset, explainer):
         dtypes = load_obj('data/texas' + '/dtypes')
 
         # Reading primary external causes of injury,
+
         data = pd.read_csv('data/' + 'texas' + '/' + 'texas' +'.csv',
         usecols = ['E_CODE_1', 'E_CODE_2', 'OTH_ICD9_CODE_1', 'OTH_ICD9_CODE_2',
         'ADMITTING_DIAGNOSIS', 'SEX_CODE', 'RACE' ,'PAT_AGE', 'LENGTH_OF_STAY',
