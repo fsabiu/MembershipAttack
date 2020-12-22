@@ -118,12 +118,13 @@ def gridSearch(dataset, model, verbose = False):
         if (model == 'NN'):
             grid_params = {
                 'hidden_layers': [1, 2],
-                'hidden_units': [2],
-                'act_funct': ['relu'],
-                'learning_rate': [1e-6],
-                'optimizer': [SGD],
-                'batch_size': [32],
-                'epochs': [200]
+                'hidden_units': [106],
+                'act_funct': ['relu', 'softmax', 'tanh'],
+                'learning_rate': [1e-6, 1e-5, 5e-4, 1e-4],
+                'optimizer': [SGD, Adam, RMSprop],
+                'batch_size': [None, 16, 32],
+                'epochs': [450],
+                'loss': ['BinaryCrossentropy']
             }
 
         if (model == 'RF'):
@@ -150,7 +151,7 @@ def gridSearch(dataset, model, verbose = False):
                 'optimizer': [SGD, Adam, RMSprop],
                 'batch_size': [None, 16, 32],
                 'epochs': [450],
-                'loss': ['BinaryCrossentropy', 'CategoricalCrossentropy', 'SparseCategoricalCrossentropy']
+                'loss': ['CategoricalCrossentropy']
             }
 
         if (model == 'RF'):
