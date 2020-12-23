@@ -1,8 +1,7 @@
-from attack import *
-from util import path
+from util import load_obj, path
 from attack_util import call_attack, writeAttackModels
+from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 
-from lime.lime import lime_tabular
 import sys
 sys.path.insert(0, path)
 
@@ -12,20 +11,35 @@ def adult_attack(model):
     n_classes = 2
 
     # Attack params
-    shadow_train_size = 10000
-    shadow_val_size = 10000
-    n_shadow_models = 10
+    shadow_train_size = 5000
+    shadow_val_size = 5000
+    n_shadow_models = 2
 
     # Shadow params
-    shadow_params = {
-        'bootstrap': False,
-        'criterion': 'entropy',
-        'max_depth': 40,
-        'min_samples_split': 5,
-        'min_samples_leaf': 5,
-        'n_estimators': 100,
-        'max_features': 'sqrt'
-    }
+    shadow_params = None
+
+    if(model == 'RF'):
+        shadow_params = {
+            'bootstrap': False,
+            'criterion': 'entropy',
+            'max_depth': 40,
+            'min_samples_split': 5,
+            'min_samples_leaf': 5,
+            'n_estimators': 100,
+            'max_features': 'sqrt'
+        }
+
+    if(model == 'NN'):
+        shadow_params = {
+            'hidden_layers': 2,
+            'hidden_units': 106,
+            'act_funct': 'tanh',
+            'learning_rate': 1e-5,
+            'optimizer': RMSprop,
+            'batch_size': 16,
+            'epochs': 200,
+            'loss': 'BinaryCrossentropy'
+        }
 
     attack_params = {
         'hidden_layers': 1,
@@ -49,6 +63,7 @@ def adult_attack(model):
                     shadow_val_size = shadow_val_size,
                     n_shadow_models = n_shadow_models)
 
+    print("Done")
     return models, histores
 
 def mobility_attack(model):
@@ -164,12 +179,12 @@ if __name__ == "__main__":
     models = histories = None
 
     if(dataset == 'adult'):
-        adult_attack(model)
+        models, histories = adult_attack(model)
 
     if(dataset == 'mobility'):
-        mobility_attack(model)
+        models, histories = mobility_attack(model)
 
     if(dataset == 'texas'):
-        texas_attack(model)
+        models, histories = texas_attack(model)
 
     writeAttackModels(dataset, models, histories)

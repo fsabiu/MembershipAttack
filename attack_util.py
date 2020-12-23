@@ -1,5 +1,9 @@
 import numpy as np
 import pandas as pd
+import tensorflow as tf
+
+from attack import Attack, NNAttack, RFAttack
+from util import load_obj
 
 def call_attack(dataset, model_type, shadow_params, attack_params, class_name, n_classes, shadow_train_size, shadow_val_size, n_shadow_models):
     folder = 'data/' + dataset + '/'
@@ -9,21 +13,45 @@ def call_attack(dataset, model_type, shadow_params, attack_params, class_name, n
     if( model_type == 'RF'):
         black_box = load_obj(folder + 'target/' + model_type +'/RF_model')
     if( model_type == 'NN'):
-        black_box = load_obj(folder + 'target/' + model_type +'/NN_model')
+        black_box = tf.keras.models.load_model(folder + 'target/' + model_type +'/NN_model.h5')
 
     # Train and val
-    train_data = pd.read_csv(folder + 'baseline_split/bb_train_mapped.csv', nrows = 10000)
-    val_data = pd.read_csv(folder + 'baseline_split/bb_val_mapped.csv', nrows = 10000)
-    shadow_train = pd.read_csv(folder + 'baseline_split/sh_train_mapped.csv', nrows = 50000)
+    train_data = None
+    val_data = None
+    shadow_data = None
+
+    if(model_type == 'RF'):
+        train_data = pd.read_csv(folder + 'baseline_split/bb_train_mapped.csv')
+        val_data = pd.read_csv(folder + 'baseline_split/bb_val_mapped.csv')
+        shadow_train = pd.read_csv(folder + 'baseline_split/sh_train_mapped.csv')
+
+    if(model_type == 'NN'):
+        train_data = pd.read_csv(folder + 'baseline_split/bb_train_e.csv')
+        val_data = pd.read_csv(folder + 'baseline_split/bb_val_e.csv')
+        shadow_train = pd.read_csv(folder + 'baseline_split/sh_train_e.csv')
 
     # Initializing attack
-    attack = RFAttack(attack_model_type = 'NN',
-        dataset = dataset,
-        target = black_box,
-        target_train = train_data,
-        target_val = val_data,
-        class_name = class_name,
-        n_classes = n_classes)
+    attack = None
+    print("Attack params")
+    print(attack_params)
+
+    if(model_type == 'RF'):
+        attack = RFAttack(attack_model_type = 'NN',
+            dataset = dataset,
+            target = black_box,
+            target_train = train_data,
+            target_val = val_data,
+            class_name = class_name,
+            n_classes = n_classes)
+
+    if(model_type == 'NN'):
+        attack = NNAttack(attack_model_type = 'NN',
+            dataset = dataset,
+            target = black_box,
+            target_train = train_data,
+            target_val = val_data,
+            class_name = class_name,
+            n_classes = n_classes)
 
     models, histories = attack.runAttack(
         shadow_train,
