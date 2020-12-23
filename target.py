@@ -273,39 +273,59 @@ if __name__ == "__main__":
             if(model_type == 'NN'):
                 pass
 
-        if(dataset == 'adult_best' and model_type == 'RF'):
+        if(dataset == 'adult_best'):
             n_classes = 2
             label = 'class'
-            params = {
-            'bootstrap': False,
-            'criterion': 'entropy',
-            'max_depth': 40,
-            'min_samples_split': 5,
-            'min_samples_leaf': 5,
-            'n_estimators': 100,
-            'max_features': 'sqrt'
-            }
-            pass
 
-        if(dataset == 'adult_best' and model_type == 'NN'):
-            pass
+            if(model_type == 'RF'):
+                params = {
+                'bootstrap': False,
+                'criterion': 'entropy',
+                'max_depth': 40,
+                'min_samples_split': 5,
+                'min_samples_leaf': 5,
+                'n_estimators': 100,
+                'max_features': 'sqrt'
+                }
 
-        if(dataset == 'mobility_best' and model_type == 'RF'):
+            if (model_type == 'NN'):
+                params = {
+                    'hidden_layers': 2,
+                    'hidden_units': 106,
+                    'act_funct': 'tanh',
+                    'learning_rate': 1e-5,
+                    'optimizer': RMSprop,
+                    'batch_size': 16,
+                    'epochs': 450,
+                    'loss': 'BinaryCrossentropy'
+                }
+
+        if(dataset == 'mobility_best'):
             n_classes = 4
             label = 'class'
-            params = {
-            'bootstrap': True,
-            'criterion': 'entropy',
-            'max_depth': 160,
-            'min_samples_split': 20,
-            'min_samples_leaf': 5,
-            'n_estimators': 100,
-            'max_features': 'auto'
-            }
-            pass
 
-        if(dataset == 'mobility_best' and model_type == 'NN'):
-            pass
+            if(model_type == 'RF'):
+                params = {
+                'bootstrap': True,
+                'criterion': 'entropy',
+                'max_depth': 160,
+                'min_samples_split': 20,
+                'min_samples_leaf': 5,
+                'n_estimators': 100,
+                'max_features': 'auto'
+                }
+
+            if(model_type == 'NN'):
+                params = {
+                    'hidden_layers': 2,
+                    'hidden_units': 50,
+                    'act_funct': 'tanh',
+                    'learning_rate': 1e-4,
+                    'optimizer': RMSprop,
+                    'batch_size': 32,
+                    'epochs': 450,
+                    'loss': 'CategoricalCrossentropy'
+                }
 
         # Setting MLFlow
         mlflow.set_experiment(experiment_name = experiment_name)
