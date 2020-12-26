@@ -3,7 +3,7 @@ import pandas as pd
 import tensorflow as tf
 
 from attack import Attack, NNAttack, RFAttack
-from util import load_obj
+from util import load_obj, save_obj
 
 def call_attack(dataset, model_type, shadow_params, attack_params, class_name, n_classes, shadow_train_size, shadow_val_size, n_shadow_models):
     folder = 'data/' + dataset + '/'
@@ -32,8 +32,6 @@ def call_attack(dataset, model_type, shadow_params, attack_params, class_name, n
 
     # Initializing attack
     attack = None
-    print("Attack params")
-    print(attack_params)
 
     if(model_type == 'RF'):
         attack = RFAttack(attack_model_type = 'NN',
@@ -77,4 +75,4 @@ def writeAttackModels(dataset, models, histories):
 
     for i, model in enumerate(models):
         model.save(folder + 'attack_model_' + str(i) + '.h5')
-        save_obj(histories[i], 'attack_history_' + str(i))
+        #save_obj(histories[i], 'attack_history_' + str(i))

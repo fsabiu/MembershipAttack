@@ -317,12 +317,12 @@ if __name__ == "__main__":
 
             if(model_type == 'NN'):
                 params = {
-                    'hidden_layers': 2,
-                    'hidden_units': 50,
+                    'hidden_layers': 1,
+                    'hidden_units': 24,
                     'act_funct': 'tanh',
-                    'learning_rate': 1e-4,
+                    'learning_rate': 5e-4,
                     'optimizer': RMSprop,
-                    'batch_size': 32,
+                    'batch_size': 16,
                     'epochs': 450,
                     'loss': 'CategoricalCrossentropy'
                 }
