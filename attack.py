@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import mlflow
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -79,8 +80,6 @@ class Attack(ABC):
         X_val_target, y_val_target = self.prepare_target_data(self.target_val, self.target_class_name)
 
         # Target predictions
-        print(np.shape(X_train_target))
-        print(np.shape(X_train_target))
         pred_train_target = self.targetPredict(self.target, X_train_target)
         pred_val_target = self.targetPredict(self.target, X_val_target)
 
@@ -180,11 +179,13 @@ class Attack(ABC):
             self.class_indices_val.append([j for j in range(len(self.X_val_att)) if self.y_val_true[j] == self.target_labels[i] ])
 
         # Assert sizes of mapping data -> original class
-        print(type(self.class_indices_train))
-        print(type(self.class_indices_train[0]))
-        print(type(self.class_indices_train[0][0]))
-        print(sum([len(idces) for idces in self.class_indices_train]) == len(self.y_true_attack))
-        print(sum([len(idces) for idces in self.class_indices_val]) == len(self.y_val_true))
+        #print(sum([len(idces) for idces in self.class_indices_train]) == len(self.y_true_attack))
+        #print(sum([len(idces) for idces in self.class_indices_val]) == len(self.y_val_true))
+
+        # Setting MLFlow
+        experiment_name = "attack " + self.dataset_name + " " + self.target_model
+        mlflow.set_experiment(experiment_name = experiment_name)
+        exp = mlflow.get_experiment_by_name(experiment_name)
 
         for i in range(self.n_classes):
             self.attack_models[i] = model_creation(
@@ -197,52 +198,41 @@ class Attack(ABC):
             output_units = 2,
             input_size = self.n_classes)
 
-            print("Training attack for class " + str(self.target_labels[i]))
-            print(i)
-            print(np.shape(self.X_val_att))
-            print(np.shape(self.y_val_true))
-            a = {}
-            a['X-tr'] = self.X_train_att[self.class_indices_train[i]]
-            a['y-tr'] = self.y_train_att[self.class_indices_train[i]]
-            a['X-val'] = self.X_val_att[self.class_indices_val[i]]
-            a['y-val'] = self.y_val_att[self.class_indices_val[i]]
-
-            print('i = ' + str(i))
-            print(len(a['X-tr']))
-            print(len(a['X-val']))
-
-            print("Testing attack.....")
-            (unique, counts) = np.unique(self.y_train_att[self.class_indices_train[i]], return_counts=True)
-            frequencies = np.asarray((unique, counts)).T
-            print(frequencies)
-
             p_train = np.random.permutation(len(self.class_indices_train[i]))
 
             p_val = np.random.permutation(len(self.class_indices_val[i]))
 
+            X_train = self.X_train_att[self.class_indices_train[i]][p_train]
+            y_train = self.y_train_att[self.class_indices_train[i]][p_train]
+            X_val = self.X_val_att[self.class_indices_val[i]][p_val]
+            y_val = self.y_val_att[self.class_indices_val[i]][p_val]
+
             self.attack_models[i], self.attack_histories[i] = model_training(self.attack_models[i],
-                self.X_train_att[self.class_indices_train[i]][p_train],
-                self.y_train_att[self.class_indices_train[i]][p_train],
-                self.X_val_att[self.class_indices_val[i]][p_val],
-                self.y_val_att[self.class_indices_val[i]][p_val],
+                X_train,
+                y_train,
+                X_val,
+                y_val,
                 pool_size = None,
                 batch_size = self.attack_params['batch_size'],
                 epochs = self.attack_params['epochs'],
                 logdir = None)
-            # i = 99
-            a['y_train'] = self.y_train_att[self.class_indices_train[i]]
-            a['y_val'] = self.y_val_att[self.class_indices_val[i]]
+
+            # Evaluation
+            evaluation = model_evaluation(modelType = 'NN', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = X_val)
+
+            # Logs
+            self.attack_params['target_class'] = self.target_labels[i]
+            make_report(modelType = 'NN', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
 
         return self.attack_models, self.attack_histories
 
     def runAttack(self, shadow_data, shadow_train_size, shadow_val_size, n_shadow_models, shadow_params, attack_params):
         # Checking sizes
         if(len(shadow_data) < shadow_train_size + shadow_val_size):
-            raise Exception("Error: Shadow models dataset sizes")
+            raise Exception("Error: Shadow models dataset sizes. Total available records: " + str(len(shadow_data)))
 
         if(n_shadow_models != self.n_classes):
-            print("Warning ...")
-
+            print("Warning ... Parameters not optimized")
 
         print("Training " + self.dataset_name + " attack")
 
@@ -262,16 +252,11 @@ class Attack(ABC):
         self.trainShadowModels()
         print("Shadow models trained")
 
-        print("Testing.....")
-        (unique, counts) = np.unique(self.y_train_att, return_counts=True)
-        frequencies = np.asarray((unique, counts)).T
-        print(frequencies)
-
         print("Training attack model(s)")
-        res = self.trainAttackModel()
+        models, histories = self.trainAttackModel()
         print("Attack model(s) trained")
 
-        return res
+        return models, histories
 
 class NNAttack(Attack):
     def __init__(self, attack_model_type, dataset, target, target_train, target_val, class_name, n_classes):
@@ -291,41 +276,3 @@ class RFAttack(Attack):
 
     def targetPredict(self, model, X):
         return model.predict_proba(X)
-
-
-# folder = 'data/' + 'texas/'
-#
-# # Black box
-# black_box = load_obj(folder + 'target/RF/RF_model')
-#
-# # Train and val
-# train_data = pd.read_csv(folder + 'baseline_split/bb_train_mapped.csv', nrows = 10000)
-# val_data = pd.read_csv(folder + 'baseline_split/bb_val_mapped.csv', nrows = 10000)
-# shadow_train = pd.read_csv(folder + 'baseline_split/sh_train_mapped.csv', nrows = 10000)
-#
-# # Shadow paramts
-# shadow_params = {
-#     'bootstrap': False,
-#     'max_depth': 90,
-#     'min_samples_split': 10,
-#     'min_samples_leaf': 5,
-#     'n_estimators': 100,
-#     'max_features': 0.6
-# }
-#
-# attack_params = {
-#     'hidden_layers': 1,
-#     'hidden_units': 100,
-#     'act_funct': 'sigmoid',
-#     'learning_rate': 1e-5,
-#     'optimizer': Adam,
-#     'batch_size': 32,
-#     'epochs': 200
-# }
-#
-# print("Initializing attack")
-# a = RFAttack('NN', 'texas', black_box, train_data, val_data, 'PRINC_SURG_PROC_CODE', 100)
-# print("Attack initialized")
-#
-# print("Attacking...")
-# a.runAttack(shadow_train, 1000, 1000, 10, shadow_params, attack_params)
