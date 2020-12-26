@@ -72,20 +72,34 @@ def mobility_attack(model):
     n_classes = 4
 
     # Attack params
-    shadow_train_size = 10000
-    shadow_val_size = 10000
-    n_shadow_models = 10
+    shadow_train_size = 1200
+    shadow_val_size = 1200
+    n_shadow_models = 4
 
-    # Shadow params
-    shadow_params = {
-        'bootstrap': True,
-        'criterion': 'entropy',
-        'max_depth': 160,
-        'min_samples_split': 20,
-        'min_samples_leaf': 5,
-        'n_estimators': 100,
-        'max_features': 'auto'
-    }
+    shadow_params = None
+
+    if(model == 'NN'):
+        shadow_params = {
+            'hidden_layers': 2,
+            'hidden_units': 50,
+            'act_funct': 'tanh',
+            'learning_rate': 1e-4,
+            'optimizer': RMSprop,
+            'batch_size': 32,
+            'epochs': 450,
+            'loss': 'CategoricalCrossentropy'
+        }
+
+    if(model == 'RF'):
+        shadow_params = {
+            'bootstrap': True,
+            'criterion': 'entropy',
+            'max_depth': 160,
+            'min_samples_split': 20,
+            'min_samples_leaf': 5,
+            'n_estimators': 100,
+            'max_features': 'auto'
+        }
 
     attack_params = {
         'hidden_layers': 1,
@@ -94,7 +108,8 @@ def mobility_attack(model):
         'learning_rate': 1e-2,
         'optimizer': Adam,
         'batch_size': 32,
-        'epochs': 200
+        'epochs': 200,
+        'loss': 'BinaryCrossentropy'
     }
 
     models, histores = call_attack(
@@ -123,12 +138,11 @@ def texas_attack(model):
     # Shadow params
     shadow_params = {
         'bootstrap': False,
-        'criterion': 'entropy',
-        'max_depth': 90,
-        'min_samples_split': 10,
+        'max_depth': 150,
+        'min_samples_split': 5,
         'min_samples_leaf': 5,
-        'n_estimators': 100,
-        'max_features': 0.6
+        'n_estimators': 522,
+        'max_features': 0.4
     }
 
     attack_params = {
@@ -138,7 +152,8 @@ def texas_attack(model):
         'learning_rate': 1e-2,
         'optimizer': Adam,
         'batch_size': 32,
-        'epochs': 200
+        'epochs': 200,
+        'loss': 'BinaryCrossentropy'
     }
 
     models, histores = call_attack(
