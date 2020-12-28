@@ -305,13 +305,14 @@ def model_evaluation(modelType, model, X_val, y_val, X_test, y_test):
     y_val_pred = None
     y_test_pred = None
 
+    if(modelType == 'NN_attack'):
+        y_val_pred = np.squeeze(model.predict(np.squeeze(X_val)))
+        y_test_pred = np.squeeze(model.predict(np.squeeze(X_test)))
+
     if (modelType == 'NN'):
         y_val_pred = model.predict(X_val)
         y_test_pred = model.predict(X_test)
         #y_pred = model.predict_classes(X_test)
-
-        print(np.shape(y_val_pred))
-        print(np.shape(y_test_pred))
 
         idx = np.argmax(y_val_pred, axis=-1)
         y_val_pred = np.zeros( y_val_pred.shape )
