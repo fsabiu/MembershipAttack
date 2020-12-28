@@ -133,7 +133,7 @@ def texas_attack(model):
     # Attack params
     shadow_train_size = 10000
     shadow_val_size = 10000
-    n_shadow_models = 10
+    n_shadow_models = 100
 
     # Shadow params
     shadow_params = {
