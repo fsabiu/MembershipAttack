@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.optimizers import Adam
-from util import load_obj, model_creation, model_training, model_evaluation, prepareNNdata, prepareRFdata
+from util import load_obj, make_report, model_creation, model_training, model_evaluation, prepareNNdata, prepareRFdata
 
 class Attack(ABC):
 
@@ -195,7 +195,7 @@ class Attack(ABC):
             learning_rate = self.attack_params['learning_rate'],
             optimizer = self.attack_params['optimizer'],
             loss = self.attack_params['loss'],
-            output_units = 2,
+            output_units = 1,
             input_size = self.n_classes)
 
             p_train = np.random.permutation(len(self.class_indices_train[i]))
@@ -218,7 +218,10 @@ class Attack(ABC):
                 logdir = None)
 
             # Evaluation
-            evaluation = model_evaluation(modelType = 'NN', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = X_val)
+            print("Train shapesss")
+            print(np.shape(X_train))
+
+            evaluation = model_evaluation(modelType = 'NN_attack', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = y_val)
 
             # Logs
             self.attack_params['target_class'] = self.target_labels[i]
