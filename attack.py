@@ -68,6 +68,8 @@ class Attack(ABC):
         for i, label in enumerate(sorted(self.shadow_data[self.target_class_name].unique())):
             self.target_labels[i] = label
 
+        #save_obj(self.target_labels, '')
+
         # Shaping attack training data
         self.X_train_att = np.zeros(((self.shadow_train_size + self.shadow_val_size) * self.n_shadow_models, self.n_classes))
         self.y_train_att = np.zeros(((self.shadow_train_size + self.shadow_val_size) * self.n_shadow_models,1))
@@ -100,8 +102,8 @@ class Attack(ABC):
         self.y_val_att[len(pred_train_target_sample) : len(pred_train_target_sample) + len(pred_val_target)] = 1
 
         # Getting classes from predictions
-        y_train_target_class = np.array([np.argmax(vect) for vect in y_train_target])
-        y_val_target_class = np.array([np.argmax(vect) for vect in y_val_target])
+        y_train_target_class = np.array([self.target_labels[np.argmax(vect)] for vect in y_train_target])
+        y_val_target_class = np.array([self.target_labels[np.argmax(vect)] for vect in y_val_target])
 
         self.y_val_true =  np.hstack((y_train_target_class[idx], y_train_target_class))
 
@@ -198,15 +200,17 @@ class Attack(ABC):
             output_units = 1,
             input_size = self.n_classes)
 
+            # Permuting train and test
             p_train = np.random.permutation(len(self.class_indices_train[i]))
-
             p_val = np.random.permutation(len(self.class_indices_val[i]))
 
+            # Defining train and test
             X_train = self.X_train_att[self.class_indices_train[i]][p_train]
             y_train = self.y_train_att[self.class_indices_train[i]][p_train]
             X_val = self.X_val_att[self.class_indices_val[i]][p_val]
             y_val = self.y_val_att[self.class_indices_val[i]][p_val]
 
+            print("Training attack for class " + str(self.target_labels[i]) + "with train: " + str(len(X_train)) + ", val = " + str(len(X_val)))
             self.attack_models[i], self.attack_histories[i] = model_training(self.attack_models[i],
                 X_train,
                 y_train,
@@ -220,6 +224,7 @@ class Attack(ABC):
             # Evaluation
             print("Train shapesss")
             print(np.shape(X_train))
+            print(np.shape(X_val))
 
             evaluation = model_evaluation(modelType = 'NN_attack', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = y_val)
 
@@ -237,7 +242,7 @@ class Attack(ABC):
         if(n_shadow_models != self.n_classes):
             print("Warning ... Parameters not optimized")
 
-        print("Training " + self.dataset_name + " attack")
+        print("Starting " + self.dataset_name + " attack")
 
         self.n_shadow_models = n_shadow_models
         self.shadow_data = shadow_data
