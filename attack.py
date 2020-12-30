@@ -180,6 +180,9 @@ class Attack(ABC):
             # self.class_indices_val[i] contains indices of X_val_att corresponding to class self.target_labels[i]
             self.class_indices_val.append([j for j in range(len(self.X_val_att)) if self.y_val_true[j] == self.target_labels[i] ])
 
+            if(len(self.class_indices_val[i]) == 0):
+                print("Class " + str(i) + " empty")
+
         # Assert sizes of mapping data -> original class
         #print(sum([len(idces) for idces in self.class_indices_train]) == len(self.y_true_attack))
         #print(sum([len(idces) for idces in self.class_indices_val]) == len(self.y_val_true))
@@ -209,6 +212,9 @@ class Attack(ABC):
             y_train = self.y_train_att[self.class_indices_train[i]][p_train]
             X_val = self.X_val_att[self.class_indices_val[i]][p_val]
             y_val = self.y_val_att[self.class_indices_val[i]][p_val]
+
+            if(len(X_train) == 0 or len(X_val) == 0):
+                pass
 
             print("Training attack for class " + str(self.target_labels[i]) + "with train: " + str(len(X_train)) + ", val = " + str(len(X_val)))
             self.attack_models[i], self.attack_histories[i] = model_training(self.attack_models[i],
