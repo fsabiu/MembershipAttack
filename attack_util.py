@@ -18,12 +18,18 @@ def call_attack(dataset, model_type, shadow_params, attack_params, class_name, n
     # Train and val
     train_data = None
     val_data = None
-    shadow_data = None
+    shadow_train = None
 
     if(model_type == 'RF'):
-        train_data = pd.read_csv(folder + 'baseline_split/bb_train_mapped.csv')
-        val_data = pd.read_csv(folder + 'baseline_split/bb_val_mapped.csv')
-        shadow_train = pd.read_csv(folder + 'baseline_split/sh_train_mapped.csv')
+        if(dataset == 'texas'):
+            train_data = pd.read_csv(folder + 'baseline_split/bb_train_mapped.csv', nrows = shadow_train_size)
+            val_data = pd.read_csv(folder + 'baseline_split/bb_val_mapped.csv', nrows = shadow_train_size)
+            shadow_train = pd.read_csv(folder + 'baseline_split/sh_train_mapped.csv', nrows = 100000)
+        else:
+            train_data = pd.read_csv(folder + 'baseline_split/bb_train_mapped.csv')
+            val_data = pd.read_csv(folder + 'baseline_split/bb_val_mapped.csv')
+            shadow_train = pd.read_csv(folder + 'baseline_split/sh_train_mapped.csv')
+
 
     if(model_type == 'NN'):
         train_data = pd.read_csv(folder + 'baseline_split/bb_train_e.csv')
