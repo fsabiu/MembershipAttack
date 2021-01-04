@@ -15,6 +15,7 @@ class Attack(ABC):
         self.dataset_name = dataset
         self.n_classes = n_classes
         self.target_labels = {}
+        self.labels_target = {}
         self.target = target
         self.target_train = target_train
         self.target_val = target_val
@@ -67,6 +68,7 @@ class Attack(ABC):
         # Mapping labels
         for i, label in enumerate(sorted(self.shadow_data[self.target_class_name].unique())):
             self.target_labels[i] = label
+            self.labels_target[label] = i
 
         #save_obj(self.target_labels, '')
 
@@ -76,6 +78,10 @@ class Attack(ABC):
 
         # True labels
         self.y_true_attack = np.zeros(((self.shadow_train_size + self.shadow_val_size) * self.n_shadow_models,))
+
+        # added
+        y_val_labels = np.array(self.target_train[self.target_class_name])
+        y_val_labels = np.array([self.labels_target[e] for e in y_val_labels])
 
         # Preparing attack validation
         X_train_target, y_train_target = self.prepare_target_data(self.target_train, self.target_class_name)
@@ -92,8 +98,12 @@ class Attack(ABC):
         # assert len(pred_train_target_sample) == len(pred_val_target)
 
         # Shaping train and validation predictions
-        pred_train_target_shaped = np.array([[np.array(e)] for e in pred_train_target_sample])
-        pred_val_target_shaped = np.array([[np.array(e)] for e in pred_val_target])
+        # If self.target_model == 'NN',
+        pred_train_target_shaped = np.array([np.array(e) for e in pred_train_target_sample])
+        pred_val_target_shaped = np.array([np.array(e) for e in pred_val_target])
+        # else:
+        #pred_train_target_shaped = np.array([[np.array(e)] for e in pred_train_target_sample])
+        #pred_val_target_shaped = np.array([[np.array(e)] for e in pred_val_target])
 
         # Shaping attack validation data
         self.X_val_att = np.vstack((pred_train_target_shaped, pred_val_target_shaped))
@@ -102,10 +112,10 @@ class Attack(ABC):
         self.y_val_att[len(pred_train_target_sample) : len(pred_train_target_sample) + len(pred_val_target)] = 1
 
         # Getting classes from predictions
-        y_train_target_class = np.array([self.target_labels[np.argmax(vect)] for vect in y_train_target])
-        y_val_target_class = np.array([self.target_labels[np.argmax(vect)] for vect in y_val_target])
+        y_train_target_class = np.array([np.argmax(vect) for vect in y_train_target])
+        y_val_target_class = np.array([np.argmax(vect) for vect in y_val_target])
 
-        self.y_val_true =  np.hstack((y_train_target_class[idx], y_train_target_class))
+        self.y_val_true =  np.hstack((y_train_target_class[idx], y_val_labels))
 
         return
 
@@ -147,8 +157,8 @@ class Attack(ABC):
             # Model performance
             evaluation = model_evaluation(modelType = self.target_model, model = trained_shi, X_val = X_val_shi, y_val = y_val_shi, X_test = X_val_shi, y_test = y_val_shi)
 
-            print("Shadow model no: %d"%i)
-            print('\nFor shadow model with training datasize = ' + str(self.shadow_train_size))
+            print("\nShadow model no: %d"%i)
+            print('For shadow model with training datasize = ' + str(self.shadow_train_size))
             if (self.target_model == 'NN'):
                 print('Training accuracy = %f'%history.history['accuracy'][-1])
             print('Validation accuracy = %f'%evaluation['accuracy'])
@@ -166,12 +176,27 @@ class Attack(ABC):
             self.X_train_att[i*(self.shadow_train_size + self.shadow_val_size) : (i+1) * (self.shadow_train_size + self.shadow_val_size)] = np.vstack((ytemp1,ytemp2))
             self.y_train_att[i*(self.shadow_train_size + self.shadow_val_size) + self.shadow_train_size : (i+1) * (self.shadow_train_size + self.shadow_val_size)] = 1
 
-            self.y_true_attack[i*(self.shadow_train_size + self.shadow_val_size) : (i+1) * (self.shadow_train_size + self.shadow_val_size)] = np.hstack((ytemp1_class, ytemp2_class))
+            self.y_true_attack[i*(self.shadow_train_size + self.shadow_val_size) : (i+1) * (self.shadow_train_size + self.shadow_val_size)] = np.hstack((ytemp1_class.astype(int), ytemp2_class.astype(int)))
 
         print("Shadow models trained")
         return
 
     def trainAttackModel(self):
+        print("True train labels")
+        print(self.y_true_attack[:20])
+        print("True val labels")
+        print(self.y_val_true[:20])
+
+        print("Target labels")
+        print(self.target_labels[0])
+
+        (unique, counts) = np.unique(self.y_true_attack, return_counts=True)
+        frequencies = np.asarray((unique, counts)).T
+        print(frequencies[:10])
+
+        (unique, counts) = np.unique(self.y_val_true, return_counts=True)
+        frequencies = np.asarray((unique, counts)).T
+        print(frequencies[:10])
 
         for i in range(self.n_classes):
             # self.class_indices_train[i] contains indices of X_train_att corresponding to class self.target_labels[i]
@@ -182,6 +207,7 @@ class Attack(ABC):
 
             if(len(self.class_indices_val[i]) == 0):
                 print("Class " + str(i) + " empty")
+
 
         # Assert sizes of mapping data -> original class
         #print(sum([len(idces) for idces in self.class_indices_train]) == len(self.y_true_attack))
@@ -213,8 +239,12 @@ class Attack(ABC):
             X_val = self.X_val_att[self.class_indices_val[i]][p_val]
             y_val = self.y_val_att[self.class_indices_val[i]][p_val]
 
+            print("Train shapesss for " + str(i))
+            print(np.shape(X_train))
+            print(np.shape(X_val))
+
             if(len(X_train) == 0 or len(X_val) == 0):
-                pass
+                continue
 
             print("Training attack for class " + str(self.target_labels[i]) + "with train: " + str(len(X_train)) + ", val = " + str(len(X_val)))
             self.attack_models[i], self.attack_histories[i] = model_training(self.attack_models[i],
@@ -228,9 +258,6 @@ class Attack(ABC):
                 logdir = None)
 
             # Evaluation
-            print("Train shapesss")
-            print(np.shape(X_train))
-            print(np.shape(X_val))
 
             evaluation = model_evaluation(modelType = 'NN_attack', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = y_val)
 
@@ -261,6 +288,12 @@ class Attack(ABC):
         print("Preparing attack data")
         y_values = self.prepareAttackData()
         print("Attack data prepared")
+
+        print("X_train_att, y_train_att, X_val_att, y_val_att")
+        print(np.shape(self.X_train_att))
+        print(np.shape(self.y_train_att))
+        print(np.shape(self.X_val_att))
+        print(np.shape(self.y_val_att))
 
         print("Training shadow models")
         self.trainShadowModels()
