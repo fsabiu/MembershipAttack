@@ -90,9 +90,9 @@ def prepareBBdata(dataset, label, model, final = False):
             bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', nrows = 880)
             bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv', nrows = 1000)
         else:
-            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv')
-            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv')
-            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv')
+            bb_train = pd.read_csv('data/' + dataset + '/baseline_split/bb_train_mapped.csv', nrows = 6000)
+            bb_val = pd.read_csv('data/' + dataset + '/baseline_split/bb_val_mapped.csv', nrows = 6000)
+            bb_test = pd.read_csv('data/' + dataset + '/baseline_split/test_mapped.csv', nrows = 6000)
 
         prepareData = prepareRFdata
 
@@ -264,10 +264,11 @@ if __name__ == "__main__":
             if (model_type == 'RF'):
                 params = {
                 'bootstrap': False,
-                'max_depth': 150,
-                'min_samples_split': 5,
+                'criterion': 'entropy',
+                'max_depth': 160,
+                'min_samples_split': 10,
                 'min_samples_leaf': 5,
-                'n_estimators': 522,
+                'n_estimators': 733,
                 'max_features': 0.4
                 }
             if(model_type == 'NN'):
