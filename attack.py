@@ -3,6 +3,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.optimizers import Adam
 from util import load_obj, make_report, model_creation, model_training, model_evaluation, prepareNNdata, prepareRFdata
@@ -184,8 +185,16 @@ class Attack(ABC):
 
     def trainAttackModel(self):
 
+        print(self.y_true_attack[:10])
         # Baseline classifier
-        
+        baseline_pred = []
+        for i, x in enumerate(self.X_train_att):
+            if(x[self.y_true_attack[i].astype(int)] > 0.65):
+                baseline_pred.append(0)
+            else:
+                baseline_pred.append(1)
+
+        b_acc = accuracy_score(self.y_train_att, baseline_pred)
 
         for i in range(self.n_classes):
             # self.class_indices_train[i] contains indices of X_train_att corresponding to class self.target_labels[i]
@@ -202,86 +211,123 @@ class Attack(ABC):
         #print(sum([len(idces) for idces in self.class_indices_val]) == len(self.y_val_true))
 
         # Setting MLFlow
-        experiment_name = "attack " + self.dataset_name + " " + self.target_model
+        experiment_name = None
+        if(self.attack_model_type == 'RF'):
+            experiment_name = "RFattack " + self.dataset_name + " " + self.target_model
+        else:
+            experiment_name = "attack " + self.dataset_name + " " + self.target_model
         mlflow.set_experiment(experiment_name = experiment_name)
         exp = mlflow.get_experiment_by_name(experiment_name)
 
+        # Grid search params for RF
+        grid_params = {
+            'bootstrap': [True, False],
+            'max_depth': [int(x) for x in np.linspace(start = 10, stop = 200, num = 0)] + [None],
+            'min_samples_split': [int(x) for x in np.linspace(start = 2, stop = 10, num = 5)],
+            'min_samples_leaf': [int(x) for x in np.linspace(start = 2, stop = 10, num = 5)],
+            'n_estimators': [int(x) for x in np.linspace(start = 20, stop = 1000, num = 10)],,
+            'criterion' : ['gini', 'entropy']
+        }
+
+        keys, values = zip(*grid_params.items())
+        params_list = [dict(zip(keys, v)) for v in product(*values)]
+
+        if(self.attack_model_type == 'NN'):
+            params_list = [self.attack_params]
+
         for i in range(self.n_classes):
-            self.attack_models[i] = model_creation(
-            hidden_layers = self.attack_params['hidden_layers'],
-            hidden_units = self.attack_params['hidden_units'],
-            act_function = self.attack_params['act_funct'],
-            learning_rate = self.attack_params['learning_rate'],
-            optimizer = self.attack_params['optimizer'],
-            loss = self.attack_params['loss'],
-            output_units = 1,
-            input_size = self.n_classes)
-            print(type(self.attack_models[i]))
-            # Permuting train and test
-            p_train = np.random.permutation(len(self.class_indices_train[i]))
-            p_val = np.random.permutation(len(self.class_indices_val[i]))
 
-            # Defining train and test
-            X_train = self.X_train_att[self.class_indices_train[i]][p_train]
-            y_train = self.y_train_att[self.class_indices_train[i]][p_train]
-            X_val = self.X_val_att[self.class_indices_val[i]][p_val]
-            y_val = self.y_val_att[self.class_indices_val[i]][p_val]
+            for params in params_list:
 
-            print("Train shapesss for " + str(i))
-            print(np.shape(X_train)) #(1400, 100)
-            print(np.shape(X_val))
+                self.attack_models[i] = model_creation(
+                hidden_layers = self.attack_params['hidden_layers'],
+                hidden_units = self.attack_params['hidden_units'],
+                act_function = self.attack_params['act_funct'],
+                learning_rate = self.attack_params['learning_rate'],
+                optimizer = self.attack_params['optimizer'],
+                loss = self.attack_params['loss'],
+                output_units = 1,
+                input_size = self.n_classes)
+                print(type(self.attack_models[i]))
+                # Permuting train and test
+                p_train = np.random.permutation(len(self.class_indices_train[i]))
+                p_val = np.random.permutation(len(self.class_indices_val[i]))
 
-            means = []
-            stds = []
-            for k in range(self.n_classes):
-                means.append(np.mean(X_train[:,k]))
-                stds.append(np.std(X_train[:,k]))
+                # Defining train and test
+                X_train = self.X_train_att[self.class_indices_train[i]][p_train]
+                y_train = self.y_train_att[self.class_indices_train[i]][p_train]
+                X_val = self.X_val_att[self.class_indices_val[i]][p_val]
+                y_val = self.y_val_att[self.class_indices_val[i]][p_val]
 
-            if(len(X_train) == 0 or len(X_val) == 0):
-                continue
+                print("Train shapesss for " + str(i))
+                print(np.shape(X_train)) #(1400, 100)
+                print(np.shape(X_val))
 
-            print("First two X_train")
-            print(X_train[0])
-            print(X_train[1])
+                means = []
+                stds = []
+                for k in range(self.n_classes):
+                    means.append(np.mean(X_train[:,k]))
+                    stds.append(np.std(X_train[:,k]))
 
-            print("First two y_train")
-            print(y_train[0])
-            print(y_train[1])
+                if(len(X_train) == 0 or len(X_val) == 0):
+                    continue
 
-            print("y_train_frequencies")
-            (unique, counts) = np.unique(y_train, return_counts=True)
-            frequencies = np.asarray((unique, counts)).T
-            print(frequencies)
+                print("First two X_train")
+                print(X_train[0])
+                print(X_train[1])
 
-            print("Training attack for class " + str(self.target_labels[i]) + "with train: " + str(len(X_train)) + ", val = " + str(len(X_val)))
-            print("i = " + str(i))
-            print(type(self.attack_models[i]))
+                print("First two y_train")
+                print(y_train[0])
+                print(y_train[1])
 
-            self.attack_models[i], self.attack_histories[i] = model_training(self.attack_models[i],
-                X_train,
-                y_train,
-                X_val,
-                y_val,
-                pool_size = None,
-                batch_size = self.attack_params['batch_size'],
-                epochs = self.attack_params['epochs'],
-                logdir = None)
+                print("y_train_frequencies")
+                (unique, counts) = np.unique(y_train, return_counts=True)
+                frequencies = np.asarray((unique, counts)).T
+                print(frequencies)
 
-            # Evaluation
-            # X_test = ...
-            # y_test = ...
-            evaluation = model_evaluation(modelType = 'NN_attack', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = y_val)
+                print("Training attack for class " + str(self.target_labels[i]) + "with train: " + str(len(X_train)) + ", val = " + str(len(X_val)))
+                print("i = " + str(i))
+                print(type(self.attack_models[i]))
 
-            evaluation['Train_length'] = len(X_train)
-            evaluation['Val_length'] = len(X_val)
+                evaluation = None
 
-            for k in range(self.n_classes):
-                evaluation['mean' + str(k)] = means[k]
-                evaluation['std' + str(k)] = stds[k]
+                if (self.attack_model_type == 'NN'):
+                    self.attack_models[i], self.attack_histories[i] = model_training(self.attack_models[i],
+                        X_train,
+                        y_train,
+                        X_val,
+                        y_val,
+                        pool_size = None,
+                        batch_size = self.attack_params['batch_size'],
+                        epochs = self.attack_params['epochs'],
+                        logdir = None)
 
-            # Logs
-            self.attack_params['target_class'] = self.target_labels[i]
-            make_report(modelType = 'NN', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
+                    evaluation = model_evaluation(modelType = 'NN_attack', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = y_val)
+
+                if (self.attack_model_type == 'RF'):
+
+                    #
+                    # creation
+                    self.attack_models[i] = RandomForestClassifier(bootstrap = params['bootstrap'], max_depth = params['max_depth'], min_samples_split = params['min_samples_split'],
+                    min_samples_leaf = params['min_samples_leaf'], n_estimators = params['n_estimators'], max_features = params['max_features'])
+
+                    # Training
+                    self.attack_models[i] = self.attack_models[i].fit(X_train, y_train)
+
+                    # evaluation
+                    evaluation = model_evaluation(modelType = 'RF', model = self.attack_models[i], X_val = X_val, y_val = y_val, X_test = X_val, y_test = y_val)
+
+                evaluation['Train_length'] = len(X_train)
+                evaluation['Val_length'] = len(X_val)
+                evaluation['baseline-acc'] = b_acc
+
+                for k in range(self.n_classes):
+                    evaluation['mean' + str(k)] = means[k]
+                    evaluation['std' + str(k)] = stds[k]
+
+                # Logs
+                self.attack_params['target_class'] = self.target_labels[i]
+                make_report(modelType = 'NN', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
 
         return self.attack_models, self.attack_histories
 
