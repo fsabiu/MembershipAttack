@@ -107,7 +107,7 @@ def mobility_attack(model):
         'act_funct': 'sigmoid',
         'learning_rate': 1e-2,
         'optimizer': Adam,
-        'batch_size': 32,
+        'batch_size': 8,
         'epochs': 200,
         'loss': 'BinaryCrossentropy'
     }
@@ -131,9 +131,9 @@ def texas_attack(model):
     n_classes = 100
 
     # Attack params
-    shadow_train_size = 10000
-    shadow_val_size = 10000
-    n_shadow_models = 100
+    shadow_train_size = 15000
+    shadow_val_size = 15000
+    n_shadow_models = 1
 
     # Shadow params
     shadow_params = {
@@ -149,7 +149,7 @@ def texas_attack(model):
         'hidden_layers': 1,
         'hidden_units': 150,
         'act_funct': 'sigmoid',
-        'learning_rate': 1e-2,
+        'learning_rate': 1e-3,
         'optimizer': Adam,
         'batch_size': 32,
         'epochs': 200,
