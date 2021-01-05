@@ -40,7 +40,7 @@ def call_attack(dataset, model_type, shadow_params, attack_params, class_name, n
     attack = None
 
     if(model_type == 'RF'):
-        attack = RFAttack(attack_model_type = 'NN',
+        attack = RFAttack(attack_model_type = 'RF',
             dataset = dataset,
             target = black_box,
             target_train = train_data,
