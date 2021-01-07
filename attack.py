@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from itertools import product
 import mlflow
 import numpy as np
 import pandas as pd
@@ -225,8 +226,9 @@ class Attack(ABC):
             'max_depth': [int(x) for x in np.linspace(start = 10, stop = 200, num = 0)] + [None],
             'min_samples_split': [int(x) for x in np.linspace(start = 2, stop = 10, num = 5)],
             'min_samples_leaf': [int(x) for x in np.linspace(start = 2, stop = 10, num = 5)],
-            'n_estimators': [int(x) for x in np.linspace(start = 20, stop = 1000, num = 10)],,
-            'criterion' : ['gini', 'entropy']
+            'n_estimators': [int(x) for x in np.linspace(start = 20, stop = 1000, num = 10)],
+            'criterion' : ['gini', 'entropy'],
+            'max_features': ['auto', 'sqrt']
         }
 
         keys, values = zip(*grid_params.items())
@@ -327,8 +329,10 @@ class Attack(ABC):
 
                 # Logs
                 self.attack_params['target_class'] = self.target_labels[i]
-                make_report(modelType = 'NN', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
-
+                if (self.attack_model_type == 'RF'):
+                    make_report(modelType = 'RF', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
+                if (self.attack_model_type == 'RF'):
+                    make_report(modelType = 'NN', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
         return self.attack_models, self.attack_histories
 
     def runAttack(self, shadow_data, shadow_train_size, shadow_val_size, n_shadow_models, shadow_params, attack_params):
