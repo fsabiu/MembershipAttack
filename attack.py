@@ -331,7 +331,7 @@ class Attack(ABC):
                 self.attack_params['target_class'] = self.target_labels[i]
                 if (self.attack_model_type == 'RF'):
                     make_report(modelType = 'RF', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
-                if (self.attack_model_type == 'RF'):
+                if (self.attack_model_type == 'NN'):
                     make_report(modelType = 'NN', model = self.attack_models[i], history = self.attack_histories[i], params = self.attack_params, metrics = evaluation, experiment_id = exp.experiment_id)
         return self.attack_models, self.attack_histories
 
