@@ -323,9 +323,9 @@ class Attack(ABC):
                 evaluation['Val_length'] = len(X_val)
                 evaluation['baseline-acc'] = b_acc
 
-                for k in range(self.n_classes):
+                """for k in range(self.n_classes):
                     evaluation['mean' + str(k)] = means[k]
-                    evaluation['std' + str(k)] = stds[k]
+                    evaluation['std' + str(k)] = stds[k]"""
 
                 # Logs
                 self.attack_params['target_class'] = self.target_labels[i]

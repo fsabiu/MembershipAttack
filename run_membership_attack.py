@@ -202,4 +202,4 @@ if __name__ == "__main__":
     if(dataset == 'texas'):
         models, histories = texas_attack(model)
 
-    writeAttackModels(dataset, models, histories)
+    writeAttackModels(dataset, 'NN', models, histories)

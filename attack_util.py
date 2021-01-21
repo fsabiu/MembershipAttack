@@ -76,8 +76,8 @@ def prepare_target_data(dataset, class_name):
 
     return x, y
 
-def writeAttackModels(dataset, models, histories):
-    folder = 'data/' + dataset + '/results/'
+def writeAttackModels(dataset, model_type, models, histories):
+    folder = 'data/' + dataset + '/results/' + model_type + '/'
 
     for i, model in enumerate(models):
         model.save(folder + 'attack_model_' + str(i) + '.h5')
